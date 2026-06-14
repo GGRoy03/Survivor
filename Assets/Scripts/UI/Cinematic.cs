@@ -20,11 +20,6 @@ public class CameraCore : MonoBehaviour
                      private float m_TopBarSizeNotInCinematic;
                      private float m_BotBarSizeNotInCinematic;
 
-#if UNITY_EDITOR
-    [Header("Debug")]
-    [SerializeField] bool m_IsInDialog;
-#endif
-
     void Start()
     {
         var playerObject = GameObject.FindGameObjectWithTag("Player");
@@ -43,16 +38,29 @@ public class CameraCore : MonoBehaviour
 
     void Update()
     {
-        m_CinematicTransitionProgress += m_IsInDialog ? Time.deltaTime : -Time.deltaTime;
-        m_CinematicTransitionProgress = Mathf.Clamp(m_CinematicTransitionProgress, 0.0f, m_CinematicTransitionTime);
+        var  playerState = m_PlayerCore.State;
+        bool isInDialog  = playerState == PlayerCore.GameState.Dialog;
 
-        float cinematicProgress     = m_CinematicTransitionProgress / m_CinematicTransitionTime;
+        float progress = m_CinematicTransitionProgress;
+        if(isInDialog)
+        {
+            progress += Time.deltaTime;
+            progress  = Mathf.Min(progress, m_CinematicTransitionTime);
+        }
+        else
+        {
+            progress -= Time.deltaTime;
+            progress  = Mathf.Max(progress, 0.0f);
+        }
+
+        float cinematicProgress      = progress / m_CinematicTransitionTime;
         float easedCinematicProgress = EaseInOutCubic(cinematicProgress);
 
         UpdateCinematicBarSize(m_TopCinematicBar, m_TopBarSizeNotInCinematic, easedCinematicProgress);
         UpdateCinematicBarSize(m_BotCinematicBar, m_BotBarSizeNotInCinematic, easedCinematicProgress);
 
-        m_Camera.orthographicSize = Mathf.Lerp(m_OrthographicSizeNotInCinematic, m_OrthographicSizeInCinematic, easedCinematicProgress);
+        m_Camera.orthographicSize     = Mathf.Lerp(m_OrthographicSizeNotInCinematic, m_OrthographicSizeInCinematic, easedCinematicProgress);
+        m_CinematicTransitionProgress = progress;
     }
 
     private void UpdateCinematicBarSize(Image image, float sizeNotInCinematic, float progress)
