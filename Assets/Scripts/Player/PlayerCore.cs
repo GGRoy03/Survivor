@@ -8,6 +8,7 @@ public class PlayerCore : MonoBehaviour
     [SerializeField] private InputActionAsset m_PlayerInputMap;
                      private InputAction      m_WorldMoveAction;
                      private InputAction      m_WorldInteractAction;
+                     private InputAction      m_DialogQuitAction;
 
     [Header("Interaction")]
     [SerializeField] private float            m_InteractionRange;
@@ -50,9 +51,12 @@ public class PlayerCore : MonoBehaviour
 
         m_PlayerMovement = GetComponent<PlayerMovement>();
 
-        var m_PlayerInWorldInput = m_PlayerInputMap.FindActionMap("PlayerInWorld");
-        m_WorldMoveAction     = m_PlayerInWorldInput.FindAction("Move");
-        m_WorldInteractAction = m_PlayerInWorldInput.FindAction("Interact");
+        var playerInWorldInput = m_PlayerInputMap.FindActionMap("PlayerInWorld");
+        m_WorldMoveAction     = playerInWorldInput.FindAction("Move");
+        m_WorldInteractAction = playerInWorldInput.FindAction("Interact");
+
+        var playerInDialogInput = m_PlayerInputMap.FindActionMap("PlayerInDialog");
+        m_DialogQuitAction = playerInDialogInput.FindAction("Quit");
 
         m_CurrentHealth  = m_MaxHealth;
         m_CurrentStamina = m_MaxStamina;
@@ -83,7 +87,11 @@ public class PlayerCore : MonoBehaviour
 
             case GameState.Dialog:
             {
-                
+                bool isQuitting = m_DialogQuitAction.WasPressedThisFrame();
+                if (isQuitting)
+                {
+                    m_CurrentState = GameState.World;
+                }
             } break;
         }
     }
