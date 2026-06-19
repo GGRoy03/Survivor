@@ -1,41 +1,51 @@
+using System.Collections;
+
 using UnityEngine;
+using UnityEngine.UI;
 
 public class InteractPrompt : MonoBehaviour
 {
-    [SerializeField] private float m_SqrInteractDistance;
-    [SerializeField] private Canvas m_Canvas;
+    [Header("Dependencies")]
+    [SerializeField] private CanvasGroup m_CanvasGroup;
 
-    private Transform  m_PlayerTransform;
-    private PlayerCore m_PlayerCore;
+    [Header("Animation")]
+    [SerializeField] private float m_Duration;
+    private float m_Elapsed;
 
-    void Start()
+    private bool      m_IsVisible;
+    private Coroutine m_AnimationHandle;
+
+    public void SetVisibility(bool value)
     {
-        var playerObject = GameObject.FindWithTag("Player");
-        m_PlayerTransform = playerObject.transform;
-        m_PlayerCore      = playerObject.GetComponent<PlayerCore>();
+        if(value != m_IsVisible)
+        {
+            float targetAlpha = value ? 1.0f : 0.0f;
+
+            if (m_AnimationHandle != null)
+            {
+                StopCoroutine(m_AnimationHandle);
+            }
+
+            m_Elapsed         = 0.0f;
+            m_AnimationHandle = StartCoroutine(AnimatePrompt(targetAlpha));
+            m_IsVisible       = value;
+        }
     }
 
-    void Update()
+    private IEnumerator AnimatePrompt(float targetAlpha)
     {
-        var playerState = m_PlayerCore.State;
-        if(playerState == PlayerCore.GameState.World)
-        {
-            Vector3 playerPosition    = m_PlayerTransform.position;
-            Vector3 promptPosition    = transform.position;
-            float   promptSqrDistance = (promptPosition - playerPosition).sqrMagnitude;
+        float startAlpha = m_CanvasGroup.alpha;
+        while(m_Elapsed < m_Duration)
+        {     
+            float progress = m_Elapsed / m_Duration;
 
-            if (promptSqrDistance < m_SqrInteractDistance)
-            {
-                m_Canvas.gameObject.SetActive(true);
-            }
-            else
-            {
-                m_Canvas.gameObject.SetActive(false);
-            }
+            m_CanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, progress);
+            m_Elapsed          += Time.deltaTime;
+
+            yield return null;
         }
-        else
-        {
-            m_Canvas.gameObject.SetActive(false);
-        }
-    }   
+
+        m_CanvasGroup.alpha = targetAlpha;
+        m_AnimationHandle   = null;
+    }
 }

@@ -993,7 +993,7 @@
             ]
         },
         {
-            "name": "PlayerInWorld",
+            "name": "Player_World",
             "id": "9d39b26c-17fa-43c4-9b1c-0e6998ac8d62",
             "actions": [
                 {
@@ -1085,13 +1085,22 @@
             ]
         },
         {
-            "name": "PlayerInDialog",
+            "name": "Player_Dialog",
             "id": "f8e3d5b9-a951-4995-9a2c-46120e13087f",
             "actions": [
                 {
                     "name": "Quit",
                     "type": "Button",
                     "id": "59e2e7e8-5f67-46e6-8341-cee5e248b93a",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Skip",
+                    "type": "Button",
+                    "id": "9e717f04-9e86-464a-b218-90fd7c68e9b8",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -1107,6 +1116,17 @@
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "Quit",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "cba1655e-b7b0-46d4-a847-a8f6c5b3afc9",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Skip",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

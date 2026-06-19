@@ -1,53 +1,51 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+using Survivor.Player;
+
 public class PlayerHUD : MonoBehaviour
-{
-    private struct StatBar
-    {
-        public Image Image;
-        public float MaxWidth;
-
-        public StatBar(Image image)
-        {
-            Image    = image;
-            MaxWidth = image.GetComponent<RectTransform>().sizeDelta.x;
-        }
-    }
-        
+{    
     [Header("Dependencies")]
-    [SerializeField] private Image m_HealthBarImage;
-    [SerializeField] private Image m_StaminaBarImage;
-    [SerializeField] private Image m_HungerBarImage;
+    [SerializeField] private StatBar m_HealthBar;
+    [SerializeField] private StatBar m_StaminaBar;
+    [SerializeField] private StatBar m_HungerBar;
 
-    private StatBar    m_HealthBar;
-    private StatBar    m_StaminaBar;
-    private StatBar    m_HungerBar;
-    private PlayerCore m_PlayerCore;
+    private PlayerSystem m_PlayerCore;
 
     void Start()
     {
         var playerObject = GameObject.FindGameObjectWithTag("Player");
-        m_PlayerCore = playerObject.GetComponent<PlayerCore>();
-
-        m_HealthBar  = new(m_HealthBarImage);
-        m_StaminaBar = new(m_StaminaBarImage);
-        m_HungerBar  = new(m_HungerBarImage);
+        m_PlayerCore = playerObject.GetComponent<PlayerSystem>();
     }
 
     void Update()
     {
-        SetImageWidth(m_PlayerCore.Health  / m_PlayerCore.MaxHealth , m_HealthBar);
-        SetImageWidth(m_PlayerCore.Stamina / m_PlayerCore.MaxStamina, m_StaminaBar);
-        SetImageWidth(m_PlayerCore.Hunger  / m_PlayerCore.MaxHunger , m_HungerBar);
+        m_HealthBar.SetImageWidth(m_PlayerCore.Health   / m_PlayerCore.MaxHealth);
+        m_StaminaBar.SetImageWidth(m_PlayerCore.Stamina / m_PlayerCore.MaxStamina);
+        m_HungerBar.SetImageWidth(m_PlayerCore.Hunger   / m_PlayerCore.MaxHunger);;
     }
 
-    private void SetImageWidth(float currentValueRatio, StatBar statBar)
+    [System.Serializable]
+    private struct StatBar
     {
-        float clampedRatio = Mathf.Clamp(currentValueRatio, 0.0f, 1.0f);
-        float imageWidth   = statBar.MaxWidth * clampedRatio;
+        [SerializeField] private Image Image;
+                         private float MaxWidth;
 
-        var rectTransform = statBar.Image.GetComponent<RectTransform>();
-        rectTransform.sizeDelta = new(imageWidth, rectTransform.sizeDelta.y);
+        public void SetImageWidth(float valueRatio)
+        {
+            if(Image != null)
+            {
+                var rectTransform = Image.GetComponent<RectTransform>();
+
+                if (MaxWidth == 0.0f)
+                {
+                    MaxWidth = rectTransform.sizeDelta.x;
+                }
+
+                float clampedRatio = Mathf.Clamp(valueRatio, 0.0f, 1.0f);
+                float imageWidth   = MaxWidth * clampedRatio;
+                rectTransform.sizeDelta = new(imageWidth, rectTransform.sizeDelta.y);
+            }
+        }
     }
 }

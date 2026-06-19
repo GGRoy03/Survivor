@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc6158c047458e94597b8a3476d1272c, type: 3}
+  m_Name: DialogTest
+  m_EditorClassIdentifier: 
+  m_Strings:
+  - Slices:
+    - TextColor:
+        serializedVersion: 2
+        rgba: 4280624593
+      Content: 'This text is sliced, because it should be red. '
+      TransitionTime: 0
+    - TextColor:
+        serializedVersion: 2
+        rgba: 4280136237
+      Content: 'This text is sliced, because it should be green and has a transition
+        time... '
+      TransitionTime: 1
+    - TextColor:
+        serializedVersion: 2
+        rgba: 4280136237
+      Content: This text is sliced, because it is showed after the transition time.
+        It is still green.
+      TransitionTime: 0
+    BackgroundColor: {r: 0.6981132, g: 0.4510949, b: 0.062566735, a: 1}
+  - Slices:
+    - TextColor:
+        serializedVersion: 2
+        rgba: 4290498843
+      Content: Is this correctly displayed?
+      TransitionTime: 0
+    BackgroundColor: {r: 0.42634624, g: 0.8113208, b: 0.26406196, a: 1}
