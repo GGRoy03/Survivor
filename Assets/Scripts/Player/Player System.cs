@@ -2,205 +2,148 @@ using UnityEngine;
 
 namespace Survivor.Player
 {
-    public enum PlayerState
+    public class PlayerController : MonoBehaviour
     {
-        World  = 0,
-        Dialog = 1,
-    }
+        [Header("Dependencies")]
+        [SerializeField] private DialogSystem        m_DialogSystem; // TODO: Singleton
+        [SerializeField] private PlayerInputProvider m_InputProvider;
+        [SerializeField] private PlayerAnimator      m_Animator;
 
-    public class PlayerSystem : MonoBehaviour
-    {
-        [Header("Interaction")]
-        [SerializeField] private float m_InteractionRange;
+        [Header("Behavior")]
+        [SerializeField] private PlayerBehavior m_Behavior;
 
         [Header("Stats")]
-        [SerializeField] private float m_MaxHealth;
-        [SerializeField] private float m_MaxStamina;
-        [SerializeField] private float m_MaxHunger;
-        [SerializeField] private float m_HungerDecreaseRate;
+        [SerializeField] private PlayerStat m_Health;
+        [SerializeField] private PlayerStat m_Stamina;
+        [SerializeField] private PlayerStat m_Hunger;
 
-        private float m_CurrentHealth;
-        private float m_CurrentStamina;
-        private float m_CurrentHunger;
-
-        [Header("Dependencies")]
-        [SerializeField] private DialogSystem        m_DialogSystem;
-        [SerializeField] private PlayerInputProvider m_InputProvider;
-
-        private Camera      m_Camera;
         private PlayerState m_CurrentState;
 
-        [Header("Movement")]
-        [SerializeField] private float m_PlayerMoveSpeed;
-
-        public float Health      => m_CurrentHealth;
-        public float Hunger      => m_CurrentHunger;
-        public float Stamina     => m_CurrentStamina;
-        public float MaxHealth   => m_MaxHealth;
-        public float MaxStamina  => m_MaxStamina;
-        public float MaxHunger   => m_MaxHunger;
-        public bool  CanInteract => (m_CurrentState == PlayerState.World && (m_DialogSystem != null && m_DialogSystem.CanChangeDialogState));
-
+        //
+        // Unity Hooks
+        //
 
         private void Start()
         {
-            m_CurrentState  = PlayerState.World;
-            m_Camera        = Camera.main;
-
-            m_CurrentHealth  = m_MaxHealth;
-            m_CurrentStamina = m_MaxStamina;
-            m_CurrentHunger  = m_MaxHunger;
+            ChangeState(new PlayerInWorld());
         }
 
         private void Update()
         {
-            switch (m_CurrentState)
+            if (m_CurrentState != null)
             {
-                case PlayerState.World:
-                {
-                    var stateAfter = UpdatePlayerInWorld(m_InputProvider.MoveInput, m_InputProvider.IsInteracting);
-                    if (stateAfter != m_CurrentState)
-                    {
-                        ChangePlayerState(m_CurrentState, stateAfter);
-                    }
-                } break;
-
-                case PlayerState.Dialog:
-                {
-                    var stateAfter = UpdatePlayerInDialog(m_InputProvider.IsSkippingDialog);
-                    if(stateAfter != m_CurrentState)
-                    {
-                        ChangePlayerState(m_CurrentState, stateAfter);
-                    }          
-                } break;
-            }
-        }
-
-        private void ChangePlayerState(PlayerState prevState, PlayerState nextState)
-        {
-            m_CurrentState = nextState;
-
-            if(m_InputProvider != null)
-            {
-                m_InputProvider.SetInputState(prevState, false);
-                m_InputProvider.SetInputState(nextState, true);
-            }
-        }
-
-        private Dialog TryFindBestDialog()
-        {
-            var interactLayer        = LayerMask.GetMask("NPC");
-            var interactSqrDistance  = m_InteractionRange * m_InteractionRange;
-            var interactColliders    = Physics.OverlapSphere(transform.position, m_InteractionRange, interactLayer);
-            var canChangeDialogState = m_DialogSystem != null && m_DialogSystem.CanChangeDialogState;
-
-            Dialog bestDialog = null;
-            float closestSqrDist = float.MaxValue;
-            foreach (var collider in interactColliders)
-            {
-                var colliderObject = collider.gameObject;
-
-                if (canChangeDialogState)
-                {
-                    if (colliderObject.TryGetComponent(out DialogItem dialogItem))
-                    {
-                        float sqrDistanceToPlayer = Vector3.SqrMagnitude(transform.position - collider.transform.position);
-                        if (sqrDistanceToPlayer < closestSqrDist)
-                        {
-                            closestSqrDist = sqrDistanceToPlayer;
-                            bestDialog = dialogItem.Dialog;
-                        }
-                    }
-                }
+                m_CurrentState.OnUpdate(m_InputProvider, m_Behavior, m_DialogSystem, this);
             }
 
-            return bestDialog;
-        }
 
-        private void SetInteractPromptVisiblity(Dialog bestDialog)
-        {
-            //
-            // If we found a dialog this frame
-            // or we are exiting the cinematic (canChangeDialogState == false), we want to
-            // hide the prompt.
-            //
-            // NOTE:
-            // What happens when the player teleports? Or is displaced very rapidly? We will miss
-            // out on some prompts. It's not the case right now, so we stick with this for simplicity.
-            //
-
-            var interactLayer        = LayerMask.GetMask("Prompt");
-            var interactSqrDistance  = m_InteractionRange * m_InteractionRange;
-            var interactColliders    = Physics.OverlapSphere(transform.position, m_InteractionRange * 1.5f, interactLayer);
-            var canChangeDialogState = m_DialogSystem != null && m_DialogSystem.CanChangeDialogState;
-
-            foreach (var collider in interactColliders)
-            {
-                if (collider.gameObject.TryGetComponent<InteractPrompt>(out var prompt))
-                {
-                    var colliderPosition    = collider.transform.position;
-                    var colliderSqrDistance = Vector3.SqrMagnitude(colliderPosition - transform.position);
-
-                    if (bestDialog || !canChangeDialogState)
-                    {
-                        prompt.SetVisibility(false);
-                    }
-                    else
-                    {
-                        bool isInRange = colliderSqrDistance <= interactSqrDistance;
-                        prompt.SetVisibility(isInRange);
-                    }
-                }
-            }
+            m_Animator.Animate(new AnimationInfo());
         }
 
         //
-        // NOTE;
-        // x) Awfully formatted code.
+        // Property Hooks
         //
 
-        private PlayerState UpdatePlayerInWorld(Vector2 moveInput, bool isTryingToInteract)
+        public PlayerStat Health
         {
-            PlayerState stateAfterFrame = PlayerState.World;
-
-            Vector3 cameraForward = new(m_Camera.transform.forward.x, 0.0f, m_Camera.transform.forward.z);
-            Vector3 cameraRight   = new(m_Camera.transform.right.x  , 0.0f, m_Camera.transform.right.z);
-            Vector3 moveDirection = moveInput.x * cameraRight + moveInput.y * cameraForward;
-            float   moveSpeed     = m_PlayerMoveSpeed * Time.deltaTime;
-            Vector3 moveAmount    = moveSpeed * moveDirection;
-
-            transform.Translate(moveAmount);
-
-            Dialog bestDialog = null;
-            if(isTryingToInteract)
-            {
-                bestDialog = TryFindBestDialog();
-            }
-
-            if(bestDialog)
-            {
-                m_DialogSystem.EnterDialog(bestDialog);
-                stateAfterFrame = PlayerState.Dialog;
-            }
-
-            SetInteractPromptVisiblity(bestDialog);
-
-            m_CurrentHunger -= m_HungerDecreaseRate;
-
-            return stateAfterFrame;
+            get => m_Health;
+            set => m_Health = value;
         }
 
-        private PlayerState UpdatePlayerInDialog(bool isSkippingDialog)
+        public PlayerStat Hunger
         {
-            PlayerState stateAfterFrame = PlayerState.Dialog;
-
-            bool isDialogClosed = m_DialogSystem.UpdateDialog(isSkippingDialog);
-            if(isDialogClosed)
-            {
-                stateAfterFrame = PlayerState.World;
-            }
-
-            return stateAfterFrame;
+            get => m_Hunger;
+            set => m_Hunger = value;
         }
+
+        public PlayerStat Stamina
+        {
+            get => m_Stamina;
+            set => m_Stamina = value;
+        }
+
+        //
+        // State-Machine Hooks
+        //
+
+        public void ChangeState(PlayerState nextState)
+        {
+            if(nextState != m_CurrentState)
+            {
+                if (m_InputProvider != null)
+                {
+                    m_InputProvider.SetInputState(m_CurrentState, false);
+                    m_InputProvider.SetInputState(nextState, true);
+                }
+
+                m_CurrentState = nextState;
+                m_CurrentState.OnEnter(this);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Represents the referenced stat from a PlayerStat structure
+    /// </summary>
+
+    [System.Serializable]
+    public enum PlayerStatType
+    {
+        Health  = 0,
+        Hunger  = 1,
+        Stamina = 2,
+    }
+
+    /// <summary>
+    /// Bundle of player stat with small helpers.
+    /// </summary>
+
+    [System.Serializable]
+    public struct PlayerStat
+    {
+        [field: SerializeField] public float          Current {get; private set;}
+        [field: SerializeField] public float          Maximum {get; private set;}
+        [field: SerializeField] public PlayerStatType Type    {get; private set;}
+
+        public PlayerStat(float value, float max, PlayerStatType type)
+        {
+            Maximum = max;
+            Current = Mathf.Clamp(value, 0.0f, max);
+            Type    = type;
+        }
+
+        public static PlayerStat operator +(PlayerStat stat, float amount)
+        {
+            return new PlayerStat(stat.Current + amount, stat.Maximum, stat.Type);
+        }
+
+        public static PlayerStat operator -(PlayerStat stat, float amount)
+        {
+            return new PlayerStat(stat.Current - amount, stat.Maximum, stat.Type);
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [System.Serializable]
+    public struct PlayerBehavior
+    {
+        [field: SerializeField] public float InteractRange { get; private set; }
+        [field: SerializeField] public float MoveSpeed { get; private set; }
+        [field: SerializeField] public float AttackStaminaCost { get; private set; }
+        [field: SerializeField] public float StaminaIncreaseRate { get; private set; }
+        [field: SerializeField] public float HungerDecreaseRate { get; private set; }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+
+    public abstract class PlayerState
+    {
+        public abstract void OnEnter(PlayerController controller);
+        public abstract void OnUpdate(PlayerInputProvider inputs, PlayerBehavior behavior, DialogSystem dialog, PlayerController controller);
+
+        public abstract AnimationInfo OnAnimate();
     }
 }
