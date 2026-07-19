@@ -4,21 +4,10 @@ using UnityEngine;
 namespace Survivor.Player
 {
     [RequireComponent(typeof(Animator))]
-    public class PlayerAnimator : StateAnimator<AnimationInfo>
+    public class PlayerAnimator : StateAnimator
     {
-        private static readonly int Idle   = Animator.StringToHash("Idle");
-        private static readonly int Walk   = Animator.StringToHash("Walk");
-        private static readonly int Attack = Animator.StringToHash("Attack");
-        private static readonly int Death  = Animator.StringToHash("Death");
-
-        protected override int GetAnimationState(AnimationInfo info)
-        {
-            return Idle;
-        }
-    }
-
-    public struct AnimationInfo
-    {
-        
+        public static int IsWalking { get; } = Animator.StringToHash("IsWalking");
+        public static int Attacked  { get; } = Animator.StringToHash("Attacked");
+        public static int Died      { get; } = Animator.StringToHash("Died");
     }
 }

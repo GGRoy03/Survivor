@@ -106,6 +106,20 @@ public class DialogSystem : MonoBehaviour
         }
     }
 
+    public bool TryEnterDialog(Dialog dialog)
+    {
+        bool canEnterDialog = m_CinematicHandle == null && dialog != null;
+
+        if(canEnterDialog)
+        {
+            m_CurrentState    = DialogState.BeginDisplayingNextString;
+            m_CurrentDialog   = dialog;
+            m_CinematicHandle = StartCoroutine(AnimateDialogCinematic(1.0f));
+        }
+
+        return canEnterDialog;
+    }
+
     //
     // NOTE:
     // x) There's a weird bug which I am unable to fix where sometimes trying to skip the slices

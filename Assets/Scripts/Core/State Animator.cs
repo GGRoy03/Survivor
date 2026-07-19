@@ -1,24 +1,13 @@
 using System.Collections.Generic;
+
 using UnityEngine;
 
 namespace Survivor.Core
 {
     [RequireComponent(typeof(Animator))]
-    public abstract class StateAnimator<TInfo> : MonoBehaviour
+    public abstract class StateAnimator : MonoBehaviour
     {
-        [System.Serializable]
-        private struct StateTransition
-        {
-            public string Name;
-            public float BlendDuration;
-
-            [System.NonSerialized] public int Hash;
-        }
-
-        [SerializeField] private StateTransition[] m_States;
-
         private Animator m_Animator;
-        private int      m_CurrentState;
 
         //
         // Unity Hooks
@@ -27,45 +16,34 @@ namespace Survivor.Core
         private void Awake()
         {
             m_Animator = GetComponent<Animator>();
-
-            //
-            // TODO:
-            // This is not ideal, we would rather not deal with names and
-            // the hashing offline... Somehow.
-            //
-
-            for (int stateIdx = 0; stateIdx < m_States.Length; ++stateIdx)
-            {
-                m_States[stateIdx].Hash = Animator.StringToHash(m_States[stateIdx].Name);
-            }
         }
 
         //
-        // Animation Hooks
+        // Param Hooks
         //
 
-        public void Animate(TInfo info)
+        public void SetParam(float value, int animation)
         {
-            int animationState = GetAnimationState(info);
-            if (animationState != m_CurrentState)
+            if(m_Animator != null)
             {
-                foreach(var state in m_States)
-                {
-                    if(state.Hash == animationState)
-                    {
-                        m_Animator.CrossFade(animationState, state.BlendDuration, 0);
-                        break;
-                    }
-                }
-
-                m_CurrentState = animationState;
+                m_Animator.SetFloat(animation, value);
             }
         }
 
-        //
-        // Inheritence Interface
-        //
+        public void SetParam(bool value, int animation)
+        {
+            if(m_Animator != null)
+            {
+                m_Animator.SetBool(animation, value);
+            }
+        }
 
-        protected abstract int GetAnimationState(TInfo info);
+        public void SetParam(int animation)
+        {
+            if(m_Animator != null)
+            {
+                m_Animator.SetTrigger(animation);
+            }
+        }
     }
 }

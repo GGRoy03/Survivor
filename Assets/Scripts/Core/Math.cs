@@ -27,4 +27,21 @@ static class Math
 
         return result;
     }
+
+    /// <summary>
+    /// Computes the interpolated rotation between a source and a target vector.
+    /// </summary>
+    /// <param name="current">The current direction we are looking at.</param>
+    /// <param name="direction">The target direction we want to look at.</param>
+    /// <param name="radiansPerStep">How many radians per seconds can we rotate.</param>
+    /// <returns>A quaternion containing the rotation between the two vectors.</returns>
+
+    public static Quaternion LookTowards(Vector3 current, Vector3 direction, float radiansPerStep)
+    {
+        // float      step    = radiansPerStep * Time.deltaTime;
+        Vector3    looking = Vector3.RotateTowards(current, direction, radiansPerStep, 0.0f);
+        Quaternion result  = Quaternion.LookRotation(looking);
+
+        return result;
+    }
 }

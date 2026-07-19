@@ -5,14 +5,8 @@ namespace Survivor.Player
 {
     public class PlayerInWorld : PlayerState
     {
-        //
-        // NOTE:
-        // If the camera ever rotates, we should fallback to caching the camera and not the vectors.
-        //
-    
-        private Vector3   m_CameraForward;
-        private Vector3   m_CameraRight;
         private Transform m_Transform;
+        private Camera    m_Camera;
 
         //
         // State-Machine Hooks
@@ -20,22 +14,28 @@ namespace Survivor.Player
     
         public override void OnEnter(PlayerController Controller)
         {
-            m_CameraForward = new(Camera.main.transform.forward.x, 0.0f, Camera.main.transform.forward.z);
-            m_CameraRight   = new(Camera.main.transform.right.x  , 0.0f, Camera.main.transform.right.z);
-            m_Transform     = Controller.transform;
+            m_Camera    = Camera.main;
+            m_Transform = Controller.transform;
         }
     
-        public override void OnUpdate(PlayerInputProvider inputs, PlayerBehavior behavior, DialogSystem dialogSystem, PlayerController controller)
+        public override void OnUpdate(PlayerInputProvider inputs, PlayerAnimator animator, PlayerBehavior behavior, DialogSystem dialogSystem, PlayerController controller)
         {
             Vector3 playerPosition      = m_Transform.position;
             float   playerInteractRange = 0.0f;
     
             if(inputs.IsAttacking)
             {
+                //
+                // TODO:
+                // We need an attack timer :)
+                //
+
                 float staminaCost = behavior.AttackStaminaCost;
                 if(controller.Stamina.Current >= staminaCost)
                 {
                     controller.Stamina -= staminaCost;
+
+                    animator.SetParam(PlayerAnimator.Attacked);
                 }
                 else
                 {
@@ -45,59 +45,58 @@ namespace Survivor.Player
             else if(inputs.IsInteracting)
             {
                 Dialog bestDialog = TryFindBestDialog(playerPosition, playerInteractRange);
-                if (bestDialog)
+                if (bestDialog && dialogSystem.TryEnterDialog(bestDialog))
                 {
-                    if(dialogSystem.TryEnterDialog(bestDialog))
-                    {
-                        controller.ChangeState(new PlayerInDialog());
-                    }
+                    controller.ChangeState(new PlayerInDialog());
+
+                    animator.SetParam(false, PlayerAnimator.IsWalking);
                 }
             }
             else if(inputs.IsTogglingInventory)
             {
                 controller.ChangeState(new PlayerInInventory());
+
+                animator.SetParam(false, PlayerAnimator.IsWalking);
             }
             else
             {
-                Vector2 moveInput     = inputs.MoveInput;
-                Vector3 moveDirection = moveInput.x * m_CameraRight + moveInput.y * m_CameraForward;
-                float   moveSpeed     = behavior.MoveSpeed * Time.deltaTime;
-                Vector3 moveAmount    = moveSpeed * moveDirection;
+                //
+                // TODO:
+                // I have no clue what the expected movement is for these types of games.
+                // There's a funny bug if we move while the mouse is really close to the player.
+                // I don't know, this just sucks.
+                //
+                
+                Vector2 moveInput = inputs.MoveInput;
+                bool    isMoving  = moveInput.y > 0.0f;
 
-                m_Transform.Translate(moveAmount);
+                if(isMoving)
+                {
+                    Vector3 moveDirection = moveInput.y * Vector3.forward;
+                    float   moveSpeed     = behavior.MoveSpeed * Time.deltaTime;
+                    m_Transform.Translate(moveSpeed * moveDirection);
+                }
+
+                animator.SetParam(isMoving, PlayerAnimator.IsWalking);
             }
 
             //
-            // NOTE:
-            // We could implement these as a coroutine, but I don't see why. We probably do not want
-            // stats to be modified as the player is not in the active state (which is the world state)
-            // and adding coroutines here would just make the code more complicated as far as I can tell.
-            // This might lead to duplicate code if there are more than one state that could tick these values
-            // (maybe a combat state?), but I wager that in those cases the increment/decrement would be different
-            // anyway...
+            // Rotate the player towards where the mouse is placed.
             //
 
             {
-                controller.Stamina += behavior.StaminaIncreaseRate;
-                controller.Hunger  -= behavior.HungerDecreaseRate;
-
-                EventManager.Instance.PushEvent(new EventPlayerStatChanged()
+                var groundPlane = new Plane(Vector3.up, playerPosition);
+                var pointerRay  = m_Camera.ScreenPointToRay(inputs.PointerPosition);
+                if(groundPlane.Raycast(pointerRay, out float distance))
                 {
-                    Stat = controller.Stamina
-                });
+                    var hitPoint  = pointerRay.GetPoint(distance);
+                    var direction = Vector3.Normalize(hitPoint - playerPosition);
 
-                EventManager.Instance.PushEvent(new EventPlayerStatChanged()
-                {
-                    Stat = controller.Hunger
-                });
+                    m_Transform.rotation = Math.LookTowards(m_Transform.forward, direction, behavior.BodyRotationSpeedInRadiansPerSeconds);
+                }
             }
 
             SetInteractPromptVisiblity(playerPosition, playerInteractRange);
-        }
-
-        public override AnimationInfo OnAnimate()
-        {
-            return new AnimationInfo();
         }
         
         //

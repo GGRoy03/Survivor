@@ -1,4 +1,13 @@
+using Survivor.Enemy;
+using Survivor.Event;
+using Survivor.Inventory;
+
 using UnityEngine;
+
+//
+// TODO:
+// Fully refactor this code.
+//
 
 namespace Survivor.Player
 {
@@ -9,13 +18,15 @@ namespace Survivor.Player
         [SerializeField] private PlayerInputProvider m_InputProvider;
         [SerializeField] private PlayerAnimator      m_Animator;
 
-        [Header("Behavior")]
+        [Header("Setup")]
         [SerializeField] private PlayerBehavior m_Behavior;
 
         [Header("Stats")]
         [SerializeField] private PlayerStat m_Health;
         [SerializeField] private PlayerStat m_Stamina;
         [SerializeField] private PlayerStat m_Hunger;
+
+        [SerializeField] private ItemData m_StubItem;
 
         private PlayerState m_CurrentState;
 
@@ -26,17 +37,88 @@ namespace Survivor.Player
         private void Start()
         {
             ChangeState(new PlayerInWorld());
+
+            InventorySystem.Instance.AddItem(m_StubItem);
+            InventorySystem.Instance.AddItem(m_StubItem);
+            InventorySystem.Instance.AddItem(m_StubItem);
+        }
+
+        private void OnEnable()
+        {
+            EventManager.Instance.AddListener<EventItemConsumed>(OnItemConsumed);
+        }
+
+        private void OnDisable()
+        {
+            EventManager.Instance.RemoveListener<EventItemConsumed>(OnItemConsumed);
         }
 
         private void Update()
         {
             if (m_CurrentState != null)
             {
-                m_CurrentState.OnUpdate(m_InputProvider, m_Behavior, m_DialogSystem, this);
+                m_CurrentState.OnUpdate(m_InputProvider, m_Animator, m_Behavior, m_DialogSystem, this);
             }
 
+            //
+            // Could be in a coroutine as specified, but I didn't see the point.
+            //
 
-            m_Animator.Animate(new AnimationInfo());
+            {
+                Stamina += m_Behavior.StaminaIncreaseRate;
+                Hunger  -= m_Behavior.HungerDecreaseRate;
+
+                EventManager.Instance.PushEvent(new EventPlayerStatChanged()
+                {
+                    Stat = m_Stamina
+                });
+
+                EventManager.Instance.PushEvent(new EventPlayerStatChanged()
+                {
+                    Stat = m_Hunger
+                });
+            }
+        }
+
+        //
+        // Event Handlers
+        //
+
+        private void OnItemConsumed(EventItemConsumed payload)
+        {
+            //
+            // TODO: Stupid code.
+            //
+            
+            if(payload.HealthDelta != 0)
+            {
+                EventManager.Instance.PushEvent(new EventPlayerStatChanged()
+                {
+                    Stat = m_Health
+                });
+
+                m_Health += payload.HealthDelta;
+            }
+
+            if(payload.StaminaDelta != 0)
+            {
+                EventManager.Instance.PushEvent(new EventPlayerStatChanged()
+                {
+                    Stat = m_Stamina
+                });
+
+                m_Stamina += payload.StaminaDelta;
+            }
+
+            if(payload.HungerDelta != 0)
+            {
+                EventManager.Instance.PushEvent(new EventPlayerStatChanged()
+                {
+                    Stat = m_Hunger,
+                });
+
+                m_Hunger += payload.HungerDelta;
+            }
         }
 
         //
@@ -122,9 +204,6 @@ namespace Survivor.Player
         }
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
     [System.Serializable]
     public struct PlayerBehavior
     {
@@ -133,17 +212,12 @@ namespace Survivor.Player
         [field: SerializeField] public float AttackStaminaCost { get; private set; }
         [field: SerializeField] public float StaminaIncreaseRate { get; private set; }
         [field: SerializeField] public float HungerDecreaseRate { get; private set; }
+        [field: SerializeField] public float BodyRotationSpeedInRadiansPerSeconds { get; private set; }
     }
-
-    /// <summary>
-    /// 
-    /// </summary>
 
     public abstract class PlayerState
     {
         public abstract void OnEnter(PlayerController controller);
-        public abstract void OnUpdate(PlayerInputProvider inputs, PlayerBehavior behavior, DialogSystem dialog, PlayerController controller);
-
-        public abstract AnimationInfo OnAnimate();
+        public abstract void OnUpdate(PlayerInputProvider inputs, PlayerAnimator animator, PlayerBehavior behavior, DialogSystem dialog, PlayerController controller);
     }
 }

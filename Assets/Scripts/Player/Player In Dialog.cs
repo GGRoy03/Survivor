@@ -7,18 +7,13 @@ namespace Survivor.Player
             // No-Op
         }
 
-        public override void OnUpdate(PlayerInputProvider inputs, PlayerBehavior behavior, DialogSystem dialogSystem, PlayerController controller)
+        public override void OnUpdate(PlayerInputProvider inputs, PlayerAnimator animator, PlayerBehavior behavior, DialogSystem dialogSystem, PlayerController controller)
         {
             bool isDialogEnded = dialogSystem.UpdateDialog(inputs.IsSkippingDialog);
             if(isDialogEnded)
             {
                 controller.ChangeState(new PlayerInWorld());
             }
-        }
-
-        public override AnimationInfo OnAnimate()
-        {
-            return new AnimationInfo();
         }
     }
 }

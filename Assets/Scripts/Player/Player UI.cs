@@ -24,51 +24,39 @@ namespace Survivor.Player
         // Unity Hooks
         //
 
-        void Update()
+        private void OnEnable()
         {
-            //
-            // Listen to any stat change and update the UI.
-            //
+            EventManager.Instance.AddListener<EventPlayerStatChanged>(OnPlayerStateChanged);
+            EventManager.Instance.AddListener<EventPlayerAttackWithoutStamina>(OnPlayerAttackWithoutStamina);
+        }
 
+        private void OnDisable()
+        {
+            EventManager.Instance.RemoveListener<EventPlayerStatChanged>(OnPlayerStateChanged);
+            EventManager.Instance.RemoveListener<EventPlayerAttackWithoutStamina>(OnPlayerAttackWithoutStamina);
+        }
+
+        //
+        // Event Handlers
+        //
+
+        public void OnPlayerStateChanged(EventPlayerStatChanged payload)
+        {
+            var stat = payload.Stat;
+            switch (stat.Type)
             {
-                var iterator = EventManager.Instance.Begin<EventPlayerStatChanged>();
-                while (EventManager.Instance.Next(ref iterator, out EventPlayerStatChanged payload))
-                {
-                    var stat = payload.Stat;
-                    switch (stat.Type)
-                    {
-                        case PlayerStatType.Health:  m_HealthBar.SetImageWidth(stat);  break;
-                        case PlayerStatType.Hunger:  m_HungerBar.SetImageWidth(stat);  break;
-                        case PlayerStatType.Stamina: m_StaminaBar.SetImageWidth(stat); break;
-                    }
-                }
+                case PlayerStatType.Health:  m_HealthBar.SetImageWidth(stat); break;
+                case PlayerStatType.Hunger:  m_HungerBar.SetImageWidth(stat); break;
+                case PlayerStatType.Stamina: m_StaminaBar.SetImageWidth(stat); break;
             }
+        }
 
-            //
-            // We want to animate the UI when the player tries to attack without enough stamina.
-            //
-            // NOTE:
-            // What we could do is have a simpler API that simply finds the first one of
-            // type T and returns it. We don't need to iterate this since it always does the same thing..
-            // Uhm.. Fine for now.
-            //
-
+        public void OnPlayerAttackWithoutStamina(EventPlayerAttackWithoutStamina payload)
+        {
+            if (m_ShakeBarHandle == null)
             {
-                var iterator = EventManager.Instance.Begin<EventPlayerAttackWithoutStamina>();
-                while (EventManager.Instance.Next(ref iterator, out EventPlayerAttackWithoutStamina payload))
-                {
-                    //
-                    // NOTE:
-                    // Unsure if this is the expected behavior. Looks fine to me.
-                    //
-
-                    if(m_ShakeBarHandle == null)
-                    {
-                        m_ShakeBarHandle = StartCoroutine(ShakeStatBar(m_StaminaBar, m_ShakeDuration, m_ShakeStrength));
-                    }
-                }
+                m_ShakeBarHandle = StartCoroutine(ShakeStatBar(m_StaminaBar, m_ShakeDuration, m_ShakeStrength));
             }
-
         }
 
         //
