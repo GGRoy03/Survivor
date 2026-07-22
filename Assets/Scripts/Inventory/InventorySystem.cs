@@ -17,8 +17,6 @@ namespace Survivor.Inventory
 
     public class InventorySystem
     {
-        private static readonly int INVENTORY_SIZE = 10;
-
         private static InventorySystem m_Instance;
         private List<ItemSlot> m_ItemSlots = new();
 
