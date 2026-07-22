@@ -1,9 +1,6 @@
 using Survivor.Core;
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
-
 using Unity.Collections;
 using UnityEngine;
 
@@ -17,6 +14,8 @@ namespace Survivor.Audio
         //
         // Unity Hooks
         //
+
+        private readonly List<AudioSource> m_ActiveAudioSources = new();
 
         private void Awake()
         {
@@ -40,7 +39,32 @@ namespace Survivor.Audio
         private void Update()
         {
             //
-            // Pump The Spatial Audio Queue
+            // Push back into the pool audio sources that are done playing their sound.
+            //
+
+            for(int audioSourceIdx = 0; audioSourceIdx < m_ActiveAudioSources.Count;)
+            {
+                //
+                // We only increment the index in cases where we don't swap-back
+                // erase the active audio source. We use a swap-back approach to avoid copying
+                // the buffer multiple times and to simplify the iteration.
+                //
+
+                var audioSource = m_ActiveAudioSources[audioSourceIdx];
+                if(audioSource != null && !audioSource.isPlaying)
+                {
+                    m_ActiveAudioSources.RemoveAtSwapBack(audioSourceIdx);
+
+                    ReleaseAudioSource(audioSource);
+                }
+                else
+                {
+                    ++audioSourceIdx;
+                }
+            }
+
+            //
+            // Pump the spatial audio queue.
             //
 
             if(m_SpatialAudioQueue != null && m_ClipTable != null)
@@ -53,10 +77,12 @@ namespace Survivor.Audio
                     if (audioSource != null && audioClip != null)
                     {
                         audioSource.transform.position = payload.Position;
-                        audioSource.PlayOneShot(audioClip);
+                        audioSource.clip               = audioClip;
+
+                        audioSource.Play();
                     }
 
-                    ReleaseAudioSource(audioSource);
+                    m_ActiveAudioSources.Add(audioSource);
                 }
             }
         }
@@ -65,7 +91,7 @@ namespace Survivor.Audio
         // Audio Source Pool
         //
 
-        private Queue<AudioSource> m_AudioSourcePool;
+        private readonly Queue<AudioSource> m_AudioSourcePool = new();
 
         private AudioSource AcquireAudioSource()
         {
@@ -82,6 +108,7 @@ namespace Survivor.Audio
                 var audioSourceObject = new GameObject("Audio Source Instance", typeof(AudioSource));
                 if (audioSourceObject != null)
                 {
+                    audioSourceObject.transform.parent = transform;
                     result = audioSourceObject.GetComponent<AudioSource>();
                 }
             }
@@ -99,6 +126,7 @@ namespace Survivor.Audio
             }
         }
 
+
         //
         // Audio Commands
         //
@@ -106,9 +134,8 @@ namespace Survivor.Audio
         [System.Serializable]
         public enum GameAudioKey
         {
-            Test = 0,
-            AnotherOne = 1,
-            AndYetAnotherOne = 2,
+            GameStart = 0,
+            GameOver  = 1,
         }
 
         public struct SpatialAudio
@@ -117,7 +144,7 @@ namespace Survivor.Audio
             public Vector3      Position;
         }
 
-        private Queue<SpatialAudio> m_SpatialAudioQueue;
+        private readonly Queue<SpatialAudio> m_SpatialAudioQueue = new();
 
         public void PushAudioCommand(GameAudioKey key, Vector3 position)
         {
@@ -131,17 +158,7 @@ namespace Survivor.Audio
             }
         }
 
-        //
-        // I'd like to expose this nicely in the editor as well. Somehow.
-        // With some safety checks and whatnot... Okay. So... and I mean.
-        // Uhm. Still need the editor side of things. This is basically the only thing
-        // that's missing. It's for sure custom editor territory, though I am widly unsure
-        // on how to actually implement it... Perhaps... we just read this data from a scriptable
-        // object or something.
-        //
-
         [SerializeField]
         private EnumTable<GameAudioKey, AudioClip> m_ClipTable;
-
     }
 }
