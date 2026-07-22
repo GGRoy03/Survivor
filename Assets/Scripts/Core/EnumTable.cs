@@ -12,7 +12,7 @@ namespace Survivor.Core
         [SerializeField] private TType[] m_DataArray;
 
         private static readonly TEnum[] EnumValues   = (TEnum[])Enum.GetValues(typeof(TEnum));
-        private static readonly int     EnumMinValue = EnumValues.Length > 0 ? Convert.ToInt32(EnumValues.Length) : 0;
+        private static readonly int     EnumMinValue = EnumValues.Length > 0 ? Convert.ToInt32(EnumValues.Min()) : 0;
 
         private void EnsureSized()
         {
