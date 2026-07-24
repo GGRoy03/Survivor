@@ -1,4 +1,3 @@
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,85 +8,155 @@ namespace Survivor.Player
         [Header("Dependencies")]
         [SerializeField] private InputActionAsset m_InputAsset;
 
+        //
+        // Input State
+        //
+
+        public struct PlayerInputGeneral
+        {
+            public bool IsInventoryToggled;
+            public bool IsPauseMenuToggled;
+        }
+
+        public struct PlayerInputWorld
+        {
+            public  Vector2 Move;
+            public  Vector2 PointerPosition;
+            public  bool    IsInteracting;
+            public  bool    IsAttacking;
+        }
+
+        public struct PlayerInputDialog
+        {
+            public  bool IsSkipping;
+        }
+
+        public PlayerInputGeneral General { get; private set; }
+        public PlayerInputWorld   World { get; private set; }
+        public PlayerInputDialog  Dialog { get; private set; }
+
+        //
+        // Unity Hooks
+        //
+
         private InputActionMap m_WorldInputMap;
         private InputActionMap m_DialogInputMap;
-        private InputActionMap m_AllInputMap;
-        private InputAction    m_MoveAction;
-        private InputAction    m_InteractAction;
-        private InputAction    m_PointerPositionAction;
-        private InputAction    m_ToggleInventoryAction;
-        private InputAction    m_AttackAction;
-        private InputAction    m_SkipDialogAction;
+        private InputActionMap m_GeneralInputMap;
+
+        private InputAction m_ToggleInventoryAction;
+        private InputAction m_TogglePauseMenuAction;
+
+        private InputAction m_MoveAction;
+        private InputAction m_InteractAction;
+        private InputAction m_PointerPositionAction;
+        private InputAction m_AttackAction;
+
+        private InputAction m_SkipDialogAction;
 
         void Start()
         {
-            m_AllInputMap    = m_InputAsset.FindActionMap("Player_All");
-            m_WorldInputMap  = m_InputAsset.FindActionMap("Player_World");
-            m_DialogInputMap = m_InputAsset.FindActionMap("Player_Dialog");
+            //
+            // General Inputs
+            //
 
-            m_ToggleInventoryAction = m_AllInputMap.FindAction("Toggle Inventory");
+            m_GeneralInputMap       = FindActionMap("Player_General");
+            m_ToggleInventoryAction = FindActionInMap(m_GeneralInputMap, "Toggle Inventory");
+            m_TogglePauseMenuAction = FindActionInMap(m_GeneralInputMap, "Toggle Pause Menu");
 
-            m_MoveAction            = m_WorldInputMap.FindAction("Move");
-            m_InteractAction        = m_WorldInputMap.FindAction("Interact");
-            m_AttackAction          = m_WorldInputMap.FindAction("Attack");
-            m_PointerPositionAction = m_WorldInputMap.FindAction("Pointer Position");
+            //
+            // World Inputs
+            //
 
-            m_SkipDialogAction = m_DialogInputMap.FindAction("Skip");
+            m_WorldInputMap         = FindActionMap("Player_World");
+            m_MoveAction            = FindActionInMap(m_GeneralInputMap, "Move");
+            m_InteractAction        = FindActionInMap(m_GeneralInputMap, "Interact");
+            m_AttackAction          = FindActionInMap(m_GeneralInputMap, "Attack");
+            m_PointerPositionAction = FindActionInMap(m_GeneralInputMap, "Pointer Position");
+
+            //
+            // Dialog Inputs
+            //
+
+            m_DialogInputMap   = FindActionMap("Player_Dialog");
+            m_SkipDialogAction = FindActionInMap(m_DialogInputMap, "Skip");
+
+        }
+
+        private void Update()
+        {
+            General = new PlayerInputGeneral()
+            {
+                IsInventoryToggled = ActionToBool(m_ToggleInventoryAction),
+                IsPauseMenuToggled = ActionToBool(m_TogglePauseMenuAction),
+            };
+
+            World = new PlayerInputWorld()
+            {
+                Move            = ActionToVector2(m_MoveAction),
+                PointerPosition = ActionToVector2(m_PointerPositionAction),
+                IsInteracting   = ActionToBool(m_InteractAction),
+                IsAttacking     = ActionToBool(m_AttackAction),
+            };
+
+            Dialog = new PlayerInputDialog()
+            {
+                IsSkipping = ActionToBool(m_SkipDialogAction),
+            };
+        }
+
+        private bool ActionToBool(InputAction action)
+        {
+            bool result = action?.WasPressedThisFrame() ?? false;
+            return result;
+        }
+
+        private Vector2 ActionToVector2(InputAction action)
+        {
+            var result = action?.ReadValue<Vector2>() ?? Vector2.zero;
+            return result;
+        }
+
+        private InputActionMap FindActionMap(string name)
+        {
+            var result = m_InputAsset?.FindActionMap(name);
+            return result;
+        }
+
+        private InputAction FindActionInMap(InputActionMap map, string name)
+        {
+            var result = map?.FindAction(name);
+            return result;
         }
 
         //
-        // TODO:
-        // Compute input onces and write a read-only state which the code queries? Not that useful right now, but
-        // better in cases where we do many queries to these (which doesn't seem to be the case, so maybe
-        // we do nothing).
+        // Input State
         //
 
-        public Vector2 MoveInput       => m_MoveAction?.ReadValue<Vector2>().normalized ?? Vector2.zero;
-        public Vector2 PointerPosition => m_PointerPositionAction?.ReadValue<Vector2>() ?? Vector2.zero;
-        public bool    IsInteracting       => m_InteractAction?.WasPressedThisFrame() ?? false;
-        public bool    IsTogglingInventory => m_ToggleInventoryAction?.WasPressedThisFrame() ?? false;
-        public bool    IsAttacking         => m_AttackAction?.WasPressedThisFrame() ?? false;
-        public bool    IsSkippingDialog    => m_SkipDialogAction?.WasPressedThisFrame() ?? false;
-       
-        //
-        // NOTE:
-        // I don't even know if this is useful.
-        //
-
-        public void SetInputState(PlayerState section, bool value)
+        public enum InputContext
         {
-            if(section != null)
+            World  = 0,
+            Dialog = 1,
+        }
+
+        public void SetActiveContext(InputContext context)
+        {
+            SetInputMapState(m_WorldInputMap , InputContext.World , context);
+            SetInputMapState(m_DialogInputMap, InputContext.Dialog, context);
+        }
+
+        private void SetInputMapState(InputActionMap inputMap, InputContext srcContext, InputContext dstContext)
+        {
+            if(inputMap != null)
             {
-                System.Type    sectionType = section.GetType();
-                InputActionMap actionMap   = null;
-
-                //
-                // NOTE:
-                // Kind of annoying, because it's not exhaustive.
-                //
-
-                if(sectionType == typeof(PlayerInWorld))
+                if(srcContext == dstContext)
                 {
-                    actionMap = m_WorldInputMap;
+                    inputMap.Enable();
                 }
-                else if(sectionType == typeof(PlayerInDialog))
+                else
                 {
-                    actionMap = m_DialogInputMap;
-                }
-
-                if(actionMap != null)
-                {
-                    if(value)
-                    {
-                        actionMap.Enable();
-                    }
-                    else
-                    {
-                        actionMap.Disable();
-                    }
+                    inputMap.Disable();
                 }
             }
         }
-
     }
 }
