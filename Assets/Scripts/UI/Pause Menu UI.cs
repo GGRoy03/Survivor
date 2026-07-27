@@ -1,0 +1,41 @@
+using UnityEngine;
+
+public class PauseMenuUI : MonoBehaviour
+{
+    //
+    // Unity Hooks
+    //
+
+    [SerializeField] private RectTransform m_OverlayContainer;
+
+    private void Update()
+    {
+        if(GameController.Current == GameController.GameMode.Paused)
+        {
+            m_OverlayContainer.gameObject.SetActive(true);
+        }
+        else
+        {
+            m_OverlayContainer.gameObject.SetActive(false);
+        }
+    }
+
+    //
+    // Event Hooks
+    //
+
+    public void OnResumeGameClicked()
+    {
+        GameController.SetGameMode(GameController.GameMode.Gameplay);
+    }
+
+    public void OnSaveGameClicked()
+    {
+        SaveSystem.SaveGameState();
+    }
+
+    public void OnQuitGameClicked()
+    {
+        GameController.SetScene(GameController.Scene.Menu);
+    }
+}

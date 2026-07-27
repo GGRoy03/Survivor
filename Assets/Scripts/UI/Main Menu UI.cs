@@ -4,16 +4,21 @@ public class MainMenuUI : MonoBehaviour
 {
     public void OnNewGameClicked()
     {
-        Debug.Log("New Game!");
+        GameController.SetScene(GameController.Scene.Game);
     }
 
     public void OnLoadGameClicked()
     {
-        Debug.Log("Load Game!");
+        SaveSystem.LoadGameState();
+        GameController.SetScene(GameController.Scene.Game);
     }
 
     public void OnQuitGameClicked()
     {
-        Debug.Log("Quit Game!");
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #else
+        Application.Quit();
+        #endif // UNITY_EDITOR
     }
 }
