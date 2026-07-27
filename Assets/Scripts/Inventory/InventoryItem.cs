@@ -1,4 +1,3 @@
-using Survivor.Event;
 using TMPro;
 
 using UnityEngine;
@@ -12,56 +11,45 @@ namespace Survivor.Inventory
         [SerializeField] private Image           m_ItemContainer;
         [SerializeField] private TextMeshProUGUI m_QuantityText;
 
-        private ItemSlot m_ItemSlot;
+        private ItemData          m_ItemData;
+        private InventorySystemUI m_InventoryUI;
+        private InventorySystem   m_Inventory;
+
+        //
+        // UI Event Hooks
+        //
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            InventorySystemUI.Instance.SetHoveredItem(m_ItemSlot.Data);
+            if(m_InventoryUI != null)
+            {
+                m_InventoryUI.SetHoveredItem(m_ItemData);
+            }
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            InventorySystemUI.Instance.SetHoveredItem(null);
+            if(m_InventoryUI != null)
+            {
+                m_InventoryUI.SetHoveredItem(null);
+            }
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (m_ItemSlot.Data != null)
+            if (m_ItemData != null)
             {
-                EventManager.Instance.PushEvent(new EventItemConsumed
-                {
-                    HealthDelta  = m_ItemSlot.Data.HealthDelta,
-                    StaminaDelta = m_ItemSlot.Data.StaminaDelta,
-                    HungerDelta  = m_ItemSlot.Data.HungerDelta,
-                });
-
-                m_ItemSlot.Amount -= 1;
-                BindData(m_ItemSlot);
+                m_Inventory.PopItem(m_ItemData);
             }
         }
 
-
-        public void BindData(ItemSlot itemSlot)
+        public void BindData(ItemSlot itemSlot, InventorySystem inventory, InventorySystemUI inventoryUI)
         {
-            if(itemSlot.Data != null && itemSlot.Amount > 0)
-            {
-                m_ItemContainer.sprite = itemSlot.Data.Icon;
-                m_QuantityText.text    = itemSlot.Amount.ToString();
-
-                m_ItemSlot = itemSlot;
-            }
-            else
-            {
-                InventorySystemUI.Instance.SetHoveredItem(null);
-                Destroy(gameObject);
-            }
+            m_ItemContainer.sprite = itemSlot.Data.Icon;
+            m_QuantityText.text    = itemSlot.Amount.ToString();
+            m_ItemData             = itemSlot.Data;
+            m_Inventory            = inventory;
+            m_InventoryUI          = inventoryUI;
         }
-    }
-
-    public struct EventItemConsumed
-    {
-        public int HealthDelta;
-        public int StaminaDelta;
-        public int HungerDelta;
     }
 }

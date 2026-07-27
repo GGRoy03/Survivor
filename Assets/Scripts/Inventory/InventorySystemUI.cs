@@ -7,6 +7,9 @@ namespace Survivor.Inventory
 {
     public class InventorySystemUI : MonoBehaviour
     {
+        [Header("Dependencies")]
+        [SerializeField] private InventorySystem m_InventorySystem;
+
         [Header("Inventory Container")]
         [SerializeField] private RectTransform m_InventoryContainer;
         [SerializeField] private GameObject    m_ItemSlotPrefab;
@@ -19,26 +22,15 @@ namespace Survivor.Inventory
         [SerializeField] private TextMeshProUGUI m_ItemHungerText;
         [SerializeField] private TextMeshProUGUI m_ItemStaminaText;
 
-        private static InventorySystemUI m_Instance;
-        public static InventorySystemUI Instance => m_Instance;
-
         //
         // Unity Hooks
         //
 
+        private int m_LastInventoryVersion = -1;
+
         private void Awake()
         {
-            if(m_Instance == null)
-            {
-                m_Instance = this;
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
-
-            m_InventoryContainer.gameObject.SetActive(false);
-
+            SetVisibility(false);
             SetHoveredItem(null);
         }
 
@@ -48,52 +40,59 @@ namespace Survivor.Inventory
             {
                 m_ItemInformationWindow.position = Input.mousePosition + (m_ItemInformationWindowOffsetInY * Vector3.up);
             }
+
+            //
+            // Check if the inventory system has changed its internal state.
+            //
+
+            if(m_InventorySystem != null)
+            {
+                int currentVersion = m_InventorySystem.InventoryVersion;
+                if(m_LastInventoryVersion != currentVersion)
+                {
+                    //
+                    // Destroy every single item in the UI.
+                    //
+                    // NOTE:
+                    // Extemely lazy way to update the UI and probably terrible for big inventories,
+                    // but it's probably fine for this case.
+                    //
+
+                    foreach (Transform transform in m_InventoryContainer.transform)
+                    {
+                        Destroy(transform.gameObject);
+                    }
+
+                    //
+                    // Completely recontruct the UI from scratch using the updated list.
+                    //
+
+                    var items = m_InventorySystem.Items;
+                    foreach(var item in items)
+                    {
+                        //
+                        // NOTE:
+                        // Is this check really needed?
+                        //
+
+                        if(item.Data != null)
+                        {
+                            var itemInstance = Instantiate(m_ItemSlotPrefab, m_InventoryContainer);
+                            if(itemInstance && itemInstance.TryGetComponent<InventoryItem>(out var itemSlot))
+                            {
+                                itemSlot.BindData(item, m_InventorySystem, this);
+                            }
+                        }
+                    }
+
+                    m_LastInventoryVersion = currentVersion;
+                }
+            }
         }
 
         //
         // UI Hooks
         //
-
-        public void OnUpdate(List<ItemSlot> itemSlots)
-        {
-            //
-            // NOTE:
-            // This whole thing is written as if inventory changes were very rare and
-            // the inventory was relatively small.
-            //
-
-            if(itemSlots != null)
-            {
-                //
-                // Destroy every single item in the UI.
-                //
-                // NOTE:
-                // Extemely lazy way to update the UI and probably terrible for big inventories,
-                // but it's probably fine for this case.
-                //
-
-                foreach (Transform transform in m_InventoryContainer.transform)
-                {
-                    Destroy(transform.gameObject);
-                }
-
-                //
-                // Completely recontruct the UI from scracth using the updated list.
-                //
-
-                foreach (var item in itemSlots)
-                {
-                    if(item.Data != null)
-                    {
-                        var itemInstance = Instantiate(m_ItemSlotPrefab, m_InventoryContainer);
-                        if(itemInstance && itemInstance.TryGetComponent<InventoryItem>(out var itemSlot))
-                        {
-                            itemSlot.BindData(item);
-                        }
-                    }
-                }
-            }
-        }
 
         public void SetVisibility(bool value)
         {

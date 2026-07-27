@@ -1,41 +1,43 @@
+using Survivor.Player;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Survivor.Inventory
 {
-    public struct ItemSlot
+    public class InventorySystem : MonoBehaviour
     {
-        public ItemData Data;
-        public int Amount;
+        //
+        // Unity Hooks
+        //
 
-        public ItemSlot(ItemData itemData)
+        [Header("Dependencies")]
+        [SerializeField] private PlayerInputProvider m_InputProvider;
+
+        private void Update()
         {
-            Data   = itemData;
-            Amount = 1;
-        }
-    }
-
-    public class InventorySystem
-    {
-        private static InventorySystem m_Instance;
-        private List<ItemSlot> m_ItemSlots = new();
-
-        public static InventorySystem Instance
-        {
-            get
+            if(GameController.Current == GameController.GameMode.Inventory)
             {
-                if (m_Instance == null)
+                bool isClosingInventory = m_InputProvider.Always.IsInventoryToggled;
+                if(isClosingInventory)
                 {
-                    m_Instance = new InventorySystem();
+                    GameController.SetGameMode(GameController.GameMode.Gameplay);
                 }
-
-                return m_Instance;
             }
         }
 
-        private void PushItemToSlot(ItemData itemData)
+        //
+        // Adding/Removing Items
+        //
+
+        private List<ItemSlot> m_ItemSlots = new();
+        public int InventoryVersion {get; private set; }
+        public ReadOnlyCollection<ItemSlot> Items => m_ItemSlots.AsReadOnly();
+
+        private int FindItemSlot(ItemData itemData)
         {
-            Debug.Assert(itemData);
+            Debug.Assert(itemData != null);
 
             int itemSlotIdx = -1;
             for (int slotIdx = 0; slotIdx < m_ItemSlots.Count; ++slotIdx)
@@ -48,26 +50,71 @@ namespace Survivor.Inventory
                 }
             }
 
-            if (itemSlotIdx == -1)
-            {
-                m_ItemSlots.Add(new ItemSlot(itemData));
-            }
-            else
-            {
-                var itemAtSlot = m_ItemSlots[itemSlotIdx];
-                itemAtSlot.Amount += 1;
-
-                m_ItemSlots[itemSlotIdx] = itemAtSlot;
-            }  
+            return itemSlotIdx;
         }
 
-        public void AddItem(ItemData itemData)
+        public void PushItem(ItemData itemData)
         {
-            if (itemData != null)
+            if(itemData != null)
             {
-                PushItemToSlot(itemData);
-                InventorySystemUI.Instance.OnUpdate(m_ItemSlots);
+                int itemSlotIdx = FindItemSlot(itemData);
+                if(itemSlotIdx != -1)
+                {     
+                    m_ItemSlots[itemSlotIdx] = new ItemSlot()
+                    {
+                        Amount = m_ItemSlots[itemSlotIdx].Amount + 1,
+                        Data   = itemData,
+                    };
+                }
+                else
+                {
+                    m_ItemSlots[itemSlotIdx]= new ItemSlot()
+                    {
+                        Amount = 1,
+                        Data   = itemData,
+                    };
+                }
+
+                ++InventoryVersion;
             }
+        }
+
+        public void PopItem(ItemData itemData)
+        {
+            if(itemData != null)
+            {
+                int itemSlotIdx = FindItemSlot(itemData);
+                if(itemSlotIdx != -1)
+                {
+                    var itemSlot = m_ItemSlots[itemSlotIdx];
+                    if(itemSlot.Amount > 1)
+                    {
+                        m_ItemSlots[itemSlotIdx] = new ItemSlot()
+                        {
+                            Amount = itemSlot.Amount - 1,
+                            Data   = itemSlot.Data,
+                        };
+                    }
+                    else
+                    {
+                        m_ItemSlots.RemoveAtSwapBack(itemSlotIdx);
+                    }
+                }
+
+                ++InventoryVersion;
+            }
+        }
+    }
+
+    public struct ItemSlot
+    {
+        public ItemData Data;
+        public int Amount;
+
+        public ItemSlot(ItemData itemData)
+        {
+            Data   = itemData;
+            Amount = 1;
         }
     }
 }
