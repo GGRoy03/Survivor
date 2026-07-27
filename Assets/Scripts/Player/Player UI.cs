@@ -1,14 +1,15 @@
 using System.Collections;
 
 using UnityEngine;
-using UnityEngine.UI;
-
-using Survivor.Event;
 
 namespace Survivor.Player
 {
-    public class PlayerHUD : MonoBehaviour
-    {    
+    public class PlayerUI : MonoBehaviour
+    {
+        [Header("Dependencies")]
+        [SerializeField] private PlayerController m_PlayerController;
+        [SerializeField] private RectTransform    m_PlayerUIContainer;
+
         [Header("Stat Bars")]
         [SerializeField] private StatBar m_HealthBar;
         [SerializeField] private StatBar m_StaminaBar;
@@ -18,45 +19,68 @@ namespace Survivor.Player
         [SerializeField] private float m_ShakeDuration = 0.25f;
         [SerializeField] private float m_ShakeStrength = 8.0f;
 
-        private Coroutine m_ShakeBarHandle;
-
         //
         // Unity Hooks
         //
 
-        private void OnEnable()
+        private void Update()
         {
-            EventManager.Instance.AddListener<EventPlayerStatChanged>(OnPlayerStateChanged);
-            EventManager.Instance.AddListener<EventPlayerAttackWithoutStamina>(OnPlayerAttackWithoutStamina);
-        }
-
-        private void OnDisable()
-        {
-            EventManager.Instance.RemoveListener<EventPlayerStatChanged>(OnPlayerStateChanged);
-            EventManager.Instance.RemoveListener<EventPlayerAttackWithoutStamina>(OnPlayerAttackWithoutStamina);
-        }
-
-        //
-        // Event Handlers
-        //
-
-        public void OnPlayerStateChanged(EventPlayerStatChanged payload)
-        {
-            var stat = payload.Stat;
-            switch (stat.Type)
+            if(GameController.Current == GameController.GameMode.Gameplay)
             {
-                case PlayerStatType.Health:  m_HealthBar.SetImageWidth(stat); break;
-                case PlayerStatType.Hunger:  m_HungerBar.SetImageWidth(stat); break;
-                case PlayerStatType.Stamina: m_StaminaBar.SetImageWidth(stat); break;
+                m_PlayerUIContainer.gameObject.SetActive(true);
+
+                //
+                // Update the stat bars.
+                //
+
+                m_HealthBar.SetImageWidth(m_PlayerController.Health);
+                m_HungerBar.SetImageWidth(m_PlayerController.Hunger);
+                m_StaminaBar.SetImageWidth(m_PlayerController.Stamina);
+
+                //
+                //
+                //
+
+                if(m_PlayerController.AttackedWithoutStamnia)
+                {
+                    if (m_ShakeBarHandle == null)
+                    {
+                        m_ShakeBarHandle = StartCoroutine(ShakeStatBar(m_StaminaBar, m_ShakeDuration, m_ShakeStrength));
+                    }
+                }
+            }
+            else
+            {
+                m_PlayerUIContainer.gameObject.SetActive(false);
             }
         }
 
-        public void OnPlayerAttackWithoutStamina(EventPlayerAttackWithoutStamina payload)
+        //
+        // Animations
+        //
+
+        private Coroutine m_ShakeBarHandle;
+
+        private IEnumerator ShakeStatBar(StatBar statBar, float duration, float strength)
         {
-            if (m_ShakeBarHandle == null)
+            var     containerTransform = statBar.Container;
+            Vector2 originalPos        = containerTransform.anchoredPosition;
+
+            float elapsed = 0.0f;
+            while (elapsed < duration)
             {
-                m_ShakeBarHandle = StartCoroutine(ShakeStatBar(m_StaminaBar, m_ShakeDuration, m_ShakeStrength));
+                float offsetX = Random.Range(-1f, 1f) * strength;
+                float offsetY = Random.Range(-1f, 1f) * strength;
+                containerTransform.anchoredPosition = originalPos + new Vector2(offsetX, offsetY);
+
+                elapsed += Time.deltaTime;
+
+                yield return null;
             }
+
+            containerTransform.anchoredPosition = originalPos;
+
+            m_ShakeBarHandle = null;
         }
 
         //
@@ -84,37 +108,5 @@ namespace Survivor.Player
                 }
             }
         }
-
-        private IEnumerator ShakeStatBar(StatBar statBar, float duration, float strength)
-        {
-            var     containerTransform = statBar.Container;
-            Vector2 originalPos        = containerTransform.anchoredPosition;
-
-            float elapsed = 0.0f;
-            while (elapsed < duration)
-            {
-                float offsetX = Random.Range(-1f, 1f) * strength;
-                float offsetY = Random.Range(-1f, 1f) * strength;
-                containerTransform.anchoredPosition = originalPos + new Vector2(offsetX, offsetY);
-
-                elapsed += Time.deltaTime;
-
-                yield return null;
-            }
-
-            containerTransform.anchoredPosition = originalPos;
-
-            m_ShakeBarHandle = null;
-        }
-    }
-
-    public struct EventPlayerStatChanged
-    {
-        public PlayerStat Stat;
-    }
-    
-    public struct EventPlayerAttackWithoutStamina
-    {
-
     }
 }

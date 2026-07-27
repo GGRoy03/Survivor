@@ -12,7 +12,7 @@ namespace Survivor.Player
         // Input State
         //
 
-        public struct PlayerInputGeneral
+        public struct PlayerInputAlways
         {
             public bool IsInventoryToggled;
             public bool IsPauseMenuToggled;
@@ -31,7 +31,7 @@ namespace Survivor.Player
             public  bool IsSkipping;
         }
 
-        public PlayerInputGeneral General { get; private set; }
+        public PlayerInputAlways Always { get; private set; }
         public PlayerInputWorld   World { get; private set; }
         public PlayerInputDialog  Dialog { get; private set; }
 
@@ -41,7 +41,7 @@ namespace Survivor.Player
 
         private InputActionMap m_WorldInputMap;
         private InputActionMap m_DialogInputMap;
-        private InputActionMap m_GeneralInputMap;
+        private InputActionMap m_AlwaysInputMap;
 
         private InputAction m_ToggleInventoryAction;
         private InputAction m_TogglePauseMenuAction;
@@ -56,35 +56,35 @@ namespace Survivor.Player
         void Start()
         {
             //
-            // General Inputs
+            // Always Inputs
             //
 
-            m_GeneralInputMap       = FindActionMap("Player_General");
-            m_ToggleInventoryAction = FindActionInMap(m_GeneralInputMap, "Toggle Inventory");
-            m_TogglePauseMenuAction = FindActionInMap(m_GeneralInputMap, "Toggle Pause Menu");
+            m_AlwaysInputMap        = FindActionMap("Always");
+            m_ToggleInventoryAction = FindActionInMap(m_AlwaysInputMap, "Toggle Inventory");
+            m_TogglePauseMenuAction = FindActionInMap(m_AlwaysInputMap, "Toggle Pause Menu");
 
             //
             // World Inputs
             //
 
-            m_WorldInputMap         = FindActionMap("Player_World");
-            m_MoveAction            = FindActionInMap(m_GeneralInputMap, "Move");
-            m_InteractAction        = FindActionInMap(m_GeneralInputMap, "Interact");
-            m_AttackAction          = FindActionInMap(m_GeneralInputMap, "Attack");
-            m_PointerPositionAction = FindActionInMap(m_GeneralInputMap, "Pointer Position");
+            m_WorldInputMap         = FindActionMap("InWorld");
+            m_MoveAction            = FindActionInMap(m_AlwaysInputMap, "Move");
+            m_InteractAction        = FindActionInMap(m_AlwaysInputMap, "Interact");
+            m_AttackAction          = FindActionInMap(m_AlwaysInputMap, "Attack");
+            m_PointerPositionAction = FindActionInMap(m_AlwaysInputMap, "Pointer Position");
 
             //
             // Dialog Inputs
             //
 
-            m_DialogInputMap   = FindActionMap("Player_Dialog");
+            m_DialogInputMap   = FindActionMap("InDialog");
             m_SkipDialogAction = FindActionInMap(m_DialogInputMap, "Skip");
 
         }
 
         private void Update()
         {
-            General = new PlayerInputGeneral()
+            Always = new PlayerInputAlways()
             {
                 IsInventoryToggled = ActionToBool(m_ToggleInventoryAction),
                 IsPauseMenuToggled = ActionToBool(m_TogglePauseMenuAction),
