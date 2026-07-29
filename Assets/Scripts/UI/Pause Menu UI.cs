@@ -10,7 +10,7 @@ public class PauseMenuUI : MonoBehaviour
 
     private void Update()
     {
-        if(GameController.Current == GameController.GameMode.Paused)
+        if(GameController.IsGameMode(GameController.GameMode.Paused))
         {
             m_OverlayContainer.gameObject.SetActive(true);
         }
@@ -26,7 +26,10 @@ public class PauseMenuUI : MonoBehaviour
 
     public void OnResumeGameClicked()
     {
-        GameController.SetGameMode(GameController.GameMode.Gameplay);
+        if(GameController.IsGameMode(GameController.GameMode.Paused))
+        {
+            GameController.PopGameMode();
+        }       
     }
 
     public void OnSaveGameClicked()
