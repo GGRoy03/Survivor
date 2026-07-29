@@ -1,31 +1,70 @@
+using Survivor.Core;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public static class GameController
 {
+    //
+    // Global Game Mode
+    //
+
     public enum GameMode
     {
-        Gameplay  = 0,
-        Inventory = 1,
-        Dialogue  = 2,
-        Paused    = 3,
+        Unknown   = 0,
+        Gameplay  = 1,
+        Inventory = 2,
+        Dialogue  = 3,
+        Paused    = 4,
+        Finished  = 5,
     }
 
-    public static GameMode Current { get; private set; } = GameMode.Gameplay;
+    private static Stack<GameMode> m_ModeStack       = new();
+    private static int             m_ModeChangeFrame = 0;
 
-    public static void SetGameMode(GameMode mode)
+    public static void PushGameMode(GameMode mode)
     {
-        if(Current == GameMode.Paused)
+        if (m_ModeStack != null)
         {
-            Time.timeScale = 1.0f;
+            m_ModeStack.Push(mode);
+            m_ModeChangeFrame = Time.frameCount;
         }
-        else if(mode == GameMode.Paused)
+    }
+    
+    public static void PopGameMode()
+    {
+        if(m_ModeStack != null)
         {
-            Time.timeScale = 0.0f;
+            m_ModeStack.Pop();
+            m_ModeChangeFrame = Time.frameCount;
+        }
+    }
+
+    public static bool IsGameMode(GameMode mode)
+    {
+        bool result = false;
+
+        if(m_ModeStack != null)
+        {
+            if(m_ModeStack.Count > 0 && m_ModeChangeFrame != Time.frameCount)
+            {
+                result = mode == m_ModeStack.Peek();
+            }
         }
 
-        Current = mode;
+        return result;
     }
+
+    public static bool IsNewMode()
+    {
+        bool result = (Time.frameCount - 1) == m_ModeChangeFrame;
+        return result;
+    }
+
+    //
+    // Global Scene Management
+    //
 
     public enum Scene
     {
