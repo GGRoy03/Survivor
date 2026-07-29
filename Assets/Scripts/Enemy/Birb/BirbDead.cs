@@ -1,0 +1,33 @@
+using Survivor.Audio;
+using Survivor.Player;
+
+namespace Survivor.Enemy
+{
+    public class BirbDead : BirbState
+    {
+        //
+        // Interface Implementation
+        //
+
+        private bool m_DeathTriggered;
+
+        public override void OnUpdate(Birb birb, BirbBehavior behavior, PlayerController player, EnemyAnimator animator, AudioSystem audio)
+        {
+            if(!m_DeathTriggered)
+            {
+                animator.SetParam(EnemyAnimator.Died);
+                // audio.PushAudioCommand();
+
+                m_DeathTriggered = true;
+            }
+            else
+            {
+                if(!animator.IsClipPlaying())
+                {
+                    Destroy(gameObject);
+                    m_DeathTriggered = false;
+                }
+            }
+        }
+    }
+}
