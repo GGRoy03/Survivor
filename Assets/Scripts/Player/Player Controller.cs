@@ -1,17 +1,18 @@
 using Survivor.Audio;
 using Survivor.Core;
+using Survivor.Inventory;
 using System;
 using UnityEngine;
 
 namespace Survivor.Player
 {
-    [RequireComponent(typeof(PlayerInputProvider))]
     [RequireComponent(typeof(PlayerAnimator))]
     public class PlayerController : MonoBehaviour, ISaveable
     {
         [Header("Dependencies")]
-        [SerializeField] private DialogSystem m_DialogSystem;
-        [SerializeField] private AudioSystem  m_AudioSystem;    
+        [SerializeField] private InputProvider m_InputProvider;
+        [SerializeField] private DialogSystem  m_DialogSystem;
+        [SerializeField] private AudioSystem   m_AudioSystem;
 
         //
         // Stats
@@ -43,15 +44,17 @@ namespace Survivor.Player
         // Unity Hooks
         //
 
-        private PlayerInputProvider m_InputProvider;
         private PlayerAnimator m_Animator;
 
         public bool AttackedWithoutStamnia { get; private set; }
 
         private void Awake()
         {
-            m_InputProvider = GetComponent<PlayerInputProvider>();
-            m_Animator      = GetComponent<PlayerAnimator>();
+            //
+            // Query the local dependencies
+            //
+
+            m_Animator = GetComponent<PlayerAnimator>();
 
             //
             // Setup the player's load state.
@@ -70,18 +73,18 @@ namespace Survivor.Player
 
         private void Update()
         {
-            if(GameController.Current == GameController.GameMode.Gameplay)
+            if(GameController.IsGameMode(GameController.GameMode.Gameplay))
             {
                 bool isPauseMenuActivated = m_InputProvider.Always.IsPauseMenuToggled;
                 if(isPauseMenuActivated)
                 {
-                    GameController.SetGameMode(GameController.GameMode.Paused);
+                    GameController.PushGameMode(GameController.GameMode.Paused);
                 }
 
                 bool isInventoryActivated = m_InputProvider.Always.IsInventoryToggled;
                 if(isInventoryActivated)
                 {
-                    GameController.SetGameMode(GameController.GameMode.Inventory);
+                    GameController.PushGameMode(GameController.GameMode.Inventory);
                 }
 
                 bool isAttacking = m_InputProvider.World.IsAttacking;
@@ -115,9 +118,19 @@ namespace Survivor.Player
                     {
                         if(m_DialogSystem.TryEnterDialog(dialog))
                         {
-                            GameController.SetGameMode(GameController.GameMode.Dialogue);
+                            GameController.PushGameMode(GameController.GameMode.Dialogue);
                         }
                     }
+                }
+
+                if(m_Health.Current <= 0.0f)
+                {
+                    GameController.PushGameMode(GameController.GameMode.Finished);
+                }
+
+                if(m_Hunger.Current <= 0.0f)
+                {
+                    GameController.PushGameMode(GameController.GameMode.Finished);
                 }
 
                 SetInteractPromptVisibility(transform.position, 0.0f, 0.0f);

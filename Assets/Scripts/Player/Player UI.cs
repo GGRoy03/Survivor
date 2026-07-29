@@ -25,9 +25,12 @@ namespace Survivor.Player
 
         private void Update()
         {
-            if(GameController.Current == GameController.GameMode.Gameplay)
+            if(GameController.IsGameMode(GameController.GameMode.Gameplay))
             {
-                m_PlayerUIContainer.gameObject.SetActive(true);
+                if(GameController.IsNewMode())
+                {
+                    m_PlayerUIContainer.gameObject.SetActive(true);
+                }       
 
                 //
                 // Update the stat bars.
@@ -38,7 +41,8 @@ namespace Survivor.Player
                 m_StaminaBar.SetImageWidth(m_PlayerController.Stamina);
 
                 //
-                //
+                // TODO:
+                // This is still bad.
                 //
 
                 if(m_PlayerController.AttackedWithoutStamnia)
@@ -49,7 +53,7 @@ namespace Survivor.Player
                     }
                 }
             }
-            else
+            else if(GameController.IsNewMode())
             {
                 m_PlayerUIContainer.gameObject.SetActive(false);
             }
