@@ -12,9 +12,6 @@ namespace Survivor.Enemy
         //
         // Interface Implementation
         //
-        // TODO:
-        // The bullets are spawning in the ground.
-        //
 
         public override void OnUpdate(Birb birb, BirbBehavior behavior, PlayerController player, EnemyAnimator animator, AudioSystem audio)
         {  
@@ -24,14 +21,16 @@ namespace Survivor.Enemy
                 if(birbBullet != null)
                 {
                     birbBullet.OnSpawn(
-                        direction: Math.DirectionTowards(transform.position, player.transform.position),
-                        position:  transform.position,
+                        direction: Math.Direction(transform.position, player.transform.position),
+                        position:  birb.BulletSpawnPoint,
                         speed:     behavior.BulletSpeed,
                         damage:    behavior.BulletDamage
                         );
                 }
 
-                m_TransitionHandle = StartCoroutine(TransitionToIdle(birb));    
+                m_TransitionHandle = StartCoroutine(TransitionToIdle(birb));
+
+                animator.SetParam(EnemyAnimator.Attacked);
             }
         }
 

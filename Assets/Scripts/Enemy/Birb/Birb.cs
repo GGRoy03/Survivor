@@ -1,6 +1,8 @@
 using Survivor.Audio;
 using Survivor.Player;
+
 using System.Collections.Generic;
+
 using Unity.Collections;
 using UnityEngine;
 
@@ -10,8 +12,9 @@ namespace Survivor.Enemy
     public class Birb : MonoBehaviour
     {
         [Header("Dependencies")]
-        [SerializeField] private   GameObject   m_BirbBulletPrefab;
-        [SerializeField] private BirbBehavior m_Behavior;
+        [SerializeField] private GameObject   m_BirbBulletPrefab;
+        [SerializeField] private GameObject   m_BulletSpawnPoint;
+        [SerializeField] private BirbBehavior m_Behavior;     
 
         //
         // Unity Hooks
@@ -25,8 +28,6 @@ namespace Survivor.Enemy
         {
             //
             // Create the states
-            //
-            // TODO: I think this is recursive... Uhm.
             //
 
             Idle   = gameObject.AddComponent<BirbIdle>();
@@ -66,6 +67,23 @@ namespace Survivor.Enemy
                     UpdateActiveList();
                 }
             }    
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if(other.gameObject.layer == LayerMask.NameToLayer("Player Weapon"))
+            {
+                if (m_CurrentState != null)
+                {
+                    //
+                    // NOTE:
+                    // We don't propagate it to any state, because none of them have
+                    // any special implementation.
+                    //
+
+                    ChangeState(Dead);
+                }
+            }
         }
 
         //
@@ -117,7 +135,7 @@ namespace Survivor.Enemy
                 var bullet = m_ActiveBullets[bulletIdx];
                 if(bullet != null)
                 {
-                    var sqrDistance = Math.SqrDistanceBetweenTransform(transform, bullet.transform);
+                    var sqrDistance = Math.SqrDistance(transform, bullet.transform);
                     if (sqrDistance > sqrBulletRange || bullet.IsConsumed)
                     {
                         m_ActiveBullets.RemoveAtSwapBack(bulletIdx);
@@ -134,7 +152,6 @@ namespace Survivor.Enemy
         //
         // State-Machine Interface
         //
-
         public BirbIdle   Idle   { get; private set; }
         public BirbAttack Attack { get; private set; }
         public BirbDead   Dead   { get; private set; }
@@ -143,6 +160,8 @@ namespace Survivor.Enemy
         {
             m_CurrentState = state;
         }
+
+        public Vector3 BulletSpawnPoint => m_BulletSpawnPoint.transform.position;
     }
 
     //
