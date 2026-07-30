@@ -70,9 +70,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1ed6fee370464c14087f8d784d727f88, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3660646231277883575}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1ed6fee370464c14087f8d784d727f88, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 7938762017515101491}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1ed6fee370464c14087f8d784d727f88, type: 3}
       insertIndex: -1
@@ -80,33 +77,15 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1ed6fee370464c14087f8d784d727f88, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7592907647117121475}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1ed6fee370464c14087f8d784d727f88, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 680228957868951804}
   m_SourcePrefab: {fileID: 100100000, guid: 1ed6fee370464c14087f8d784d727f88, type: 3}
 --- !u!1 &5089921425406693265 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 1ed6fee370464c14087f8d784d727f88, type: 3}
   m_PrefabInstance: {fileID: 5359953435171566272}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &3660646231277883575
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5089921425406693265}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f19e030af8d54d84587fc4ee9bba8d08, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Animator: {fileID: 7938762017515101491}
-  m_Behavior:
-    <ChaseRange>k__BackingField: 10
-    <MoveSpeed>k__BackingField: 2.5
-    <AttackRange>k__BackingField: 2
-    <AttackDamage>k__BackingField: 10
-    <AttackSpeed>k__BackingField: 2
-    <ChanceToEnterDefendState>k__BackingField: 2000
-    <ChanceToLeaveDefendState>k__BackingField: 400
 --- !u!114 &7938762017515101491
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -156,9 +135,22 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 3.2927036, y: 3.9394343, z: 2.455813}
   m_Center: {x: 0.013284624, y: 1.9094394, z: 0.15060115}
+--- !u!114 &680228957868951804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5089921425406693265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 234b08533c0bdf74ab802ff62aac677c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Behavior: {fileID: 11400000, guid: 9bff4b52714036849b3db681a4b3d4f7, type: 2}

@@ -9,6 +9,18 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -48,6 +60,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -6567290248741508819, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -64,6 +80,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: ecf557a0a81028b4da9e0fa6d6ed8112, type: 2}
+    - target: {fileID: 8453859287085691191, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -73,13 +93,13 @@ PrefabInstance:
       addedObject: {fileID: 6617977942668793333}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 358068445783632996}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 6275510781219684413}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6259395795267758117}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2381108613998547598}
     - targetCorrespondingSourceObject: {fileID: 5844622625683270731, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2945379012778817982}
@@ -104,16 +124,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f10502910990fd4fb288e1d302c95d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_InputProvider: {fileID: 0}
   m_DialogSystem: {fileID: 0}
-  m_InputProvider: {fileID: 358068445783632996}
-  m_Animator: {fileID: 6259395795267758117}
-  m_Behavior:
-    <InteractRange>k__BackingField: 5
-    <MoveSpeed>k__BackingField: 7.5
-    <AttackStaminaCost>k__BackingField: 5
-    <StaminaIncreaseRate>k__BackingField: 0.025
-    <HungerDecreaseRate>k__BackingField: 0.0025
-    <BodyRotationSpeedInRadiansPerSeconds>k__BackingField: 0
+  m_AudioSystem: {fileID: 0}
   m_Health:
     <Current>k__BackingField: 100
     <Maximum>k__BackingField: 100
@@ -126,20 +139,6 @@ MonoBehaviour:
     <Current>k__BackingField: 100
     <Maximum>k__BackingField: 100
     <Type>k__BackingField: 1
-  m_StubItem: {fileID: 0}
---- !u!114 &358068445783632996
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 254450560979881057}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 479f049afc6970543a0f8a932e313b74, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_InputAsset: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
 --- !u!95 &6275510781219684413
 Animator:
   serializedVersion: 7
@@ -174,6 +173,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f08b9039c5b68c641bd7c3f5bd4bdc87, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!65 &2381108613998547598
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 254450560979881057}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.2817175, y: 1.549367, z: 1}
+  m_Center: {x: -0.017295003, y: 0.76419663, z: 0}
 --- !u!1 &6798977424145522043 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5844622625683270731, guid: 9bcafef97062d1c41b1667e65bb912ca, type: 3}
@@ -221,7 +241,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
