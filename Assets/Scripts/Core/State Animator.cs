@@ -45,5 +45,29 @@ namespace Survivor.Core
                 m_Animator.SetTrigger(animation);
             }
         }
+
+        //
+        // Helpers
+        //
+
+        public bool IsClipPlaying(int animation = 0)
+        {
+            bool result = false;
+
+            if(m_Animator != null)
+            {
+                var state = m_Animator.GetCurrentAnimatorStateInfo(0);
+                if(animation != 0)
+                {
+                    result = state.normalizedTime < 1.0f && state.shortNameHash == animation;
+                }
+                else
+                {
+                    result = state.normalizedTime < 1.0f;
+                }
+            }
+
+            return result;
+        }
     }
 }

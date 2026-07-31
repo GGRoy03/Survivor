@@ -15,8 +15,6 @@ namespace Survivor.Enemy
             if(m_TimeElapsed == 0.0f)
             {
                 m_Duration = Random.Range(behavior.MinimumDefendTime, behavior.MaximumDefendTime);
-
-                animator.SetParam(true, EnemyAnimator.IsDefending);
             }
 
             if (m_TimeElapsed >= m_Duration)
@@ -24,18 +22,17 @@ namespace Survivor.Enemy
                 m_TimeElapsed = 0.0f;
 
                 cactoro.ChangeState(cactoro.Idle);
-
-                animator.SetParam(false, EnemyAnimator.IsDefending);
             }
             else
             {
                 m_TimeElapsed += Time.deltaTime;
             }
+
+            Debug.Log("Defend!");
         }
 
         public override void OnAttacked(Cactoro cactoro)
         {
-            // TODO: Maybe play a sound?
         }
     }
 }

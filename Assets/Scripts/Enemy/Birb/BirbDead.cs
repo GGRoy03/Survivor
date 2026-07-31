@@ -15,13 +15,9 @@ namespace Survivor.Enemy
 
                 m_DeathTriggered = true;
             }
-            else
+            else if(!animator.IsClipPlaying())
             {
-                if(!animator.IsClipPlaying())
-                {
-                    Destroy(gameObject);
-                    m_DeathTriggered = false;
-                }
+                Destroy(gameObject);
             }
         }
     }

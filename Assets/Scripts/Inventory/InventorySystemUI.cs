@@ -36,57 +36,70 @@ namespace Survivor.Inventory
 
         private void Update()
         {
-            if(m_ItemInformationWindow != null && m_ItemInformationWindow.gameObject.activeSelf)
+            if(GameController.IsGameMode(GameController.GameMode.Inventory))
             {
-                m_ItemInformationWindow.position = Input.mousePosition + (m_ItemInformationWindowOffsetInY * Vector3.up);
-            }
+                m_InventoryContainer.gameObject.SetActive(true);
 
-            //
-            // Check if the inventory system has changed its internal state.
-            //
+                //
+                // Update the tooltip position
+                //
 
-            if(m_InventorySystem != null)
-            {
-                int currentVersion = m_InventorySystem.InventoryVersion;
-                if(m_LastInventoryVersion != currentVersion)
+                if(m_ItemInformationWindow != null && m_ItemInformationWindow.gameObject.activeSelf)
                 {
-                    //
-                    // Destroy every single item in the UI.
-                    //
-                    // NOTE:
-                    // Extemely lazy way to update the UI and probably terrible for big inventories,
-                    // but it's probably fine for this case.
-                    //
+                    m_ItemInformationWindow.position = Input.mousePosition + (m_ItemInformationWindowOffsetInY * Vector3.up);
+                }
 
-                    foreach (Transform transform in m_InventoryContainer.transform)
+                //
+                // Check if the inventory system has changed its internal state.
+                //
+
+                if(m_InventorySystem != null)
+                {
+                    int currentVersion = m_InventorySystem.InventoryVersion;
+                    if(m_LastInventoryVersion != currentVersion)
                     {
-                        Destroy(transform.gameObject);
-                    }
-
-                    //
-                    // Completely recontruct the UI from scratch using the updated list.
-                    //
-
-                    var items = m_InventorySystem.Items;
-                    foreach(var item in items)
-                    {
+                        //
+                        // Destroy every single item in the UI.
                         //
                         // NOTE:
-                        // Is this check really needed?
+                        // Extemely lazy way to update the UI and probably terrible for big inventories,
+                        // but it's probably fine for this case.
                         //
 
-                        if(item.Data != null)
+                        foreach (Transform transform in m_InventoryContainer.transform)
                         {
-                            var itemInstance = Instantiate(m_ItemSlotPrefab, m_InventoryContainer);
-                            if(itemInstance && itemInstance.TryGetComponent<InventoryItem>(out var itemSlot))
+                            Destroy(transform.gameObject);
+                        }
+
+                        //
+                        // Completely recontruct the UI from scratch using the updated list.
+                        //
+
+                        var items = m_InventorySystem.Items;
+                        foreach(var item in items)
+                        {
+                            //
+                            // NOTE:
+                            // Is this check really needed?
+                            //
+
+                            if(item.Data != null)
                             {
-                                itemSlot.BindData(item, m_InventorySystem, this);
+                                var itemInstance = Instantiate(m_ItemSlotPrefab, m_InventoryContainer);
+                                if(itemInstance && itemInstance.TryGetComponent<InventoryItem>(out var itemSlot))
+                                {
+                                    itemSlot.BindData(item, m_InventorySystem, this);
+                                }
                             }
                         }
-                    }
 
-                    m_LastInventoryVersion = currentVersion;
+                        m_LastInventoryVersion = currentVersion;
+                    }
                 }
+            }
+            else
+            {
+                m_InventoryContainer.gameObject.SetActive(false);
             }
         }
 

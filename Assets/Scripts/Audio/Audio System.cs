@@ -134,8 +134,7 @@ namespace Survivor.Audio
         [System.Serializable]
         public enum GameAudioKey
         {
-            GameStart = 0,
-            GameOver  = 1,
+            PlayerAttack = 0,
         }
 
         public struct SpatialAudio

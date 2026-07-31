@@ -1,6 +1,4 @@
-using Survivor.Audio;
 using Survivor.Core;
-using Survivor.Inventory;
 using System;
 using UnityEngine;
 
@@ -10,9 +8,11 @@ namespace Survivor.Player
     public class PlayerController : MonoBehaviour, ISaveable
     {
         [Header("Dependencies")]
-        [SerializeField] private InputProvider m_InputProvider;
-        [SerializeField] private DialogSystem  m_DialogSystem;
-        [SerializeField] private AudioSystem   m_AudioSystem;
+        [SerializeField] private InputProvider  m_InputProvider;
+        [SerializeField] private DialogSystem   m_DialogSystem;
+        [SerializeField] private PlayerBehavior m_Behavior;
+        [SerializeField] private BoxCollider    m_WeaponCollider;
+
 
         //
         // Stats
@@ -50,21 +50,13 @@ namespace Survivor.Player
 
         private void Awake()
         {
-            //
-            // Query the local dependencies
-            //
-
             m_Animator = GetComponent<PlayerAnimator>();
-
-            //
-            // Setup the player's load state.
-            //
 
             if(SaveSystem.TryFindSaveData(SaveKey, out PlayerSavedData data))
             {
-                m_Health = new PlayerStat(data.Health , m_Health.Maximum , PlayerStatType.Health);
-                m_Hunger = new PlayerStat(data.Hunger , m_Hunger.Maximum , PlayerStatType.Hunger);
-                m_Health = new PlayerStat(data.Stamina, m_Stamina.Maximum, PlayerStatType.Stamina);
+                m_Health  = new PlayerStat(data.Health , m_Health.Maximum , PlayerStatType.Health);
+                m_Hunger  = new PlayerStat(data.Hunger , m_Hunger.Maximum , PlayerStatType.Hunger);
+                m_Stamina = new PlayerStat(data.Stamina, m_Stamina.Maximum, PlayerStatType.Stamina);
 
                 transform.position = data.Position;
             }
@@ -75,108 +67,155 @@ namespace Survivor.Player
         {
             if(GameController.IsGameMode(GameController.GameMode.Gameplay))
             {
-                bool isPauseMenuActivated = m_InputProvider.Always.IsPauseMenuToggled;
-                if(isPauseMenuActivated)
+                var gameMode = UpdateGameMode();
+                if(gameMode == GameController.GameMode.Gameplay)
                 {
-                    GameController.PushGameMode(GameController.GameMode.Paused);
-                }
+                    bool isAttacking = m_Animator.IsClipPlaying(PlayerAnimator.AttackClip);
 
-                bool isInventoryActivated = m_InputProvider.Always.IsInventoryToggled;
-                if(isInventoryActivated)
-                {
-                    GameController.PushGameMode(GameController.GameMode.Inventory);
-                }
+                    //
+                    // Update the player's movement (if we are not in the attack state)
+                    //
 
-                bool isAttacking = m_InputProvider.World.IsAttacking;
-                if(isAttacking)
-                {
-                    var attackState = GetAttackState(0.0f, 0.0f);
-                    switch(attackState)
+                    if(!isAttacking)
                     {
-                        case AttackState.Success:
+                        if(TryUpdatePlayerMovement(transform, m_InputProvider.Game.Move, m_Behavior.MoveSpeed, out Vector3 position, out Quaternion rotation))
                         {
-
-                        } break;
-
-                        case AttackState.OnCooldown:
+                            transform.SetPositionAndRotation(position, rotation);
+                            m_Animator.SetParam(true, PlayerAnimator.IsWalking);
+                        }
+                        else
                         {
-                            
-                        } break;
-
-                        case AttackState.NotEnoughStamina:
-                        {
-                            AttackedWithoutStamnia = true;
-                        } break;
-                    }
-                }
-
-                bool isInteracting = m_InputProvider.World.IsInteracting;
-                if(isInteracting)
-                {
-                    var dialog = TryFindBestDialog(transform.position, 0.0f);
-                    if(dialog != null)
-                    {
-                        if(m_DialogSystem.TryEnterDialog(dialog))
-                        {
-                            GameController.PushGameMode(GameController.GameMode.Dialogue);
+                            m_Animator.SetParam(false, PlayerAnimator.IsWalking);
                         }
                     }
-                }
 
-                if(m_Health.Current <= 0.0f)
+                    //
+                    // Try to attack if the input is pressed.
+                    //
+
+                    if(m_InputProvider.Game.IsAttacking)
+                    {
+                        var attackState = TryAttack(Stamina, m_Behavior.AttackCost, m_Behavior.AttackSpeed, m_LastAttackTime);
+                        if(attackState == AttackState.Success)
+                        {
+                            m_LastAttackTime = Time.time;
+                            m_Stamina       -= m_Behavior.AttackCost;
+
+                            m_Animator.SetParam(true, PlayerAnimator.Attacked);
+                        }
+                        else if(attackState == AttackState.OnCooldown)
+                        {
+
+                        }
+                        else if(attackState == AttackState.NotEnoughStamina)
+                        {
+
+                        }
+                    }
+                    
+                    //
+                    // Update the player's stat
+                    //
+
+                    m_Stamina += m_Behavior.StaminaIncreaseRate;
+                    m_Hunger  -= m_Behavior.HungerDecreaseRate;
+
+                    //
+                    // Update the weapon's hitbox.
+                    //
+
+                    m_WeaponCollider.enabled = isAttacking;
+                }
+                else
                 {
-                    GameController.PushGameMode(GameController.GameMode.Finished);
-                }
+                    if (gameMode == GameController.GameMode.Finished)
+                    {
+                        m_Animator.SetParam(PlayerAnimator.Died);
+                    }
 
-                if(m_Hunger.Current <= 0.0f)
-                {
-                    GameController.PushGameMode(GameController.GameMode.Finished);
+                    GameController.PushGameMode(gameMode);
                 }
-
-                SetInteractPromptVisibility(transform.position, 0.0f, 0.0f);
             }
         }
 
-        //
-        // Attacking
-        //
-
-        private enum AttackState
+        private GameController.GameMode UpdateGameMode()
         {
-            Success = 0,
-            OnCooldown = 1,
-            NotEnoughStamina = 2,
-        }
+            Debug.Assert(GameController.IsGameMode(GameController.GameMode.Gameplay));
 
-        private float m_LastAttackTime;
+            var result = GameController.GameMode.Gameplay;
 
-        private AttackState GetAttackState(float attackSpeed, float attackStaminaCost)
-        {
-            AttackState result = AttackState.OnCooldown;
-
-            if (Stamina.Current < attackStaminaCost)
+            if(m_Health.Current <= 0.0f || m_Hunger.Current <= 0.0f)
             {
-                result = AttackState.NotEnoughStamina;
+                result = GameController.GameMode.Finished;
             }
-            else
+            else if(m_InputProvider.Always.IsPauseMenuToggled)
             {
-                float currentTime         = Time.time;
-                float timeSinceLastAttack = currentTime - m_LastAttackTime;
-                if (timeSinceLastAttack >= attackSpeed)
+                result = GameController.GameMode.Paused;
+            }
+            else if(m_InputProvider.Always.IsInventoryToggled)
+            {
+                result = GameController.GameMode.Inventory;
+            }
+            else if (m_InputProvider.Game.IsInteracting)
+            {
+                var dialog = TryFindBestDialog(transform.position, 0.0f);
+                if(dialog)
                 {
-                    m_LastAttackTime = timeSinceLastAttack;
-                    result           = AttackState.Success;
+                    if(m_DialogSystem.TryEnterDialog(dialog))
+                    {
+                        result = GameController.GameMode.Dialogue;
+                    }
                 }
             }
 
             return result;
         }
 
-        //
-        // Interacting
-        //
+        private static bool TryUpdatePlayerMovement(Transform transform, Vector2 moveInput, float moveSpeed, out Vector3 position, out Quaternion rotation)
+        {
+            bool isMoving = moveInput.x != 0.0f || moveInput.y != 0.0f;
+            
+            if(isMoving)
+            { 
+                var cameraForward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up);
+                var cameraRight   = Vector3.ProjectOnPlane(Camera.main.transform.right  , Vector3.up);
+                var lookDirection = Vector3.zero;
 
-        private Dialog TryFindBestDialog(Vector3 playerPosition, float range)
+                if(moveInput.x > 0.0f)
+                {
+                    lookDirection += cameraRight;
+                }
+                else if (moveInput.x < 0.0f)
+                {
+                    lookDirection -= cameraRight;
+                }
+
+                if(moveInput.y > 0.0f)
+                {
+                    lookDirection += cameraForward;
+                }
+                else if(moveInput.y < 0.0f)
+                {
+                    lookDirection -= cameraForward;
+                }
+
+                var finalLookDirection = lookDirection.normalized;
+                rotation = Math.LookAt(transform.forward, finalLookDirection, Mathf.PI * 2.0f);
+
+                var translationX = moveInput.x * moveSpeed * Time.deltaTime * cameraRight;
+                var translationZ = moveInput.y * moveSpeed * Time.deltaTime * cameraForward;
+                position = (transform.position + (translationX + translationZ));
+            }
+            else
+            {
+                position = default;
+                rotation = default;
+            }
+
+            return isMoving;
+        }
+
+        private static Dialog TryFindBestDialog(Vector3 playerPosition, float range)
         {
             Dialog bestDialog    = null;
             float  closestDialog = float.MaxValue;
@@ -196,6 +235,50 @@ namespace Survivor.Player
     
             return bestDialog;
         }
+
+        //
+        // Attacking
+        //
+
+        private enum AttackState
+        {
+            Success = 1,
+            OnCooldown = 2,
+            NotEnoughStamina = 3,
+        }
+
+        private float m_LastAttackTime;
+
+        private static AttackState TryAttack(PlayerStat stamina, float attackCost, float attackSpeed, float lastAttackTime)
+        {
+            AttackState result;
+
+            if (stamina.Current < attackCost)
+            {
+                result = AttackState.NotEnoughStamina;
+            }
+            else
+            {
+                float currentTime         = Time.time;
+                float timeSinceLastAttack = currentTime - lastAttackTime;
+
+                if (timeSinceLastAttack >= attackSpeed)
+                {
+                    result = AttackState.Success;
+                }
+                else
+                {
+                    result = AttackState.OnCooldown;
+                }
+            }
+            
+            return result;
+        }
+
+
+        //
+        // Interacting
+        //
 
         private void SetInteractPromptVisibility(Vector3 playerPosition, float lookRange, float validRange)
         {
@@ -246,7 +329,7 @@ namespace Survivor.Player
     }
 
     
-    [System.Serializable]
+    [Serializable]
     public enum PlayerStatType
     {
         Health  = 0,
@@ -254,7 +337,7 @@ namespace Survivor.Player
         Stamina = 2,
     }
 
-    [System.Serializable]
+    [Serializable]
     public struct PlayerStat
     {
         [field: SerializeField] public float Current { get; private set; }

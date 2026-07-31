@@ -16,7 +16,7 @@ public class InputProvider : MonoBehaviour
         public bool IsPauseMenuToggled;
     }
 
-    public struct InputWorld
+    public struct InputGame
     {
         public  Vector2 Move;
         public  Vector2 PointerPosition;
@@ -30,14 +30,14 @@ public class InputProvider : MonoBehaviour
     }
 
     public InputAlways Always { get; private set; }
-    public InputWorld  World { get; private set; }
+    public InputGame   Game   { get; private set; }
     public InputDialog Dialog { get; private set; }
 
     //
     // Unity Hooks
     //
 
-    private InputActionMap m_WorldInputMap;
+    private InputActionMap m_GameInputMap;
     private InputActionMap m_DialogInputMap;
     private InputActionMap m_AlwaysInputMap;
 
@@ -62,14 +62,14 @@ public class InputProvider : MonoBehaviour
         m_TogglePauseMenuAction = FindActionInMap(m_AlwaysInputMap, "Toggle Pause Menu");
 
         //
-        // World Inputs
+        // Game Inputs
         //
 
-        m_WorldInputMap         = FindActionMap("InWorld");
-        m_MoveAction            = FindActionInMap(m_AlwaysInputMap, "Move");
-        m_InteractAction        = FindActionInMap(m_AlwaysInputMap, "Interact");
-        m_AttackAction          = FindActionInMap(m_AlwaysInputMap, "Attack");
-        m_PointerPositionAction = FindActionInMap(m_AlwaysInputMap, "Pointer Position");
+        m_GameInputMap          = FindActionMap("InGame");
+        m_MoveAction            = FindActionInMap(m_GameInputMap, "Move");
+        m_InteractAction        = FindActionInMap(m_GameInputMap, "Interact");
+        m_AttackAction          = FindActionInMap(m_GameInputMap, "Attack");
+        m_PointerPositionAction = FindActionInMap(m_GameInputMap, "Pointer Position");
 
         //
         // Dialog Inputs
@@ -88,7 +88,7 @@ public class InputProvider : MonoBehaviour
             IsPauseMenuToggled = ActionToBool(m_TogglePauseMenuAction),
         };
 
-        World = new InputWorld()
+        Game = new InputGame()
         {
             Move            = ActionToVector2(m_MoveAction),
             PointerPosition = ActionToVector2(m_PointerPositionAction),
@@ -138,13 +138,13 @@ public class InputProvider : MonoBehaviour
 
     public enum InputContext
     {
-        World  = 0,
+        Game  = 0,
         Dialog = 1,
     }
 
     public void SetActiveContext(InputContext context)
     {
-        SetInputMapState(m_WorldInputMap , InputContext.World , context);
+        SetInputMapState(m_GameInputMap , InputContext.Game , context);
         SetInputMapState(m_DialogInputMap, InputContext.Dialog, context);
     }
 

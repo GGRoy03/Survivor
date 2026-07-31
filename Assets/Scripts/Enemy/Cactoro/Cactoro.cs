@@ -50,6 +50,9 @@ namespace Survivor.Enemy
             if(m_CurrentState != null)
             {
                 m_CurrentState.OnUpdate(this, m_Behavior, m_Animator, m_Player, AudioSystem.Instance);
+
+                m_Animator.SetParam(m_CurrentState == Defend, EnemyAnimator.IsDefending);
+                m_Animator.SetParam(m_CurrentState == Chase , EnemyAnimator.IsWalking);            
             }
         }
 
@@ -79,7 +82,6 @@ namespace Survivor.Enemy
         {
             m_CurrentState = state;
         }
-
     }
 
     public abstract class CactoroState : MonoBehaviour

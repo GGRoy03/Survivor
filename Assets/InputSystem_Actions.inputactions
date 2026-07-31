@@ -1013,7 +1013,7 @@
             ]
         },
         {
-            "name": "Player_World",
+            "name": "InGame",
             "id": "9d39b26c-17fa-43c4-9b1c-0e6998ac8d62",
             "actions": [
                 {
@@ -1145,7 +1145,7 @@
             ]
         },
         {
-            "name": "Player_Dialog",
+            "name": "InDialog",
             "id": "f8e3d5b9-a951-4995-9a2c-46120e13087f",
             "actions": [
                 {
@@ -1193,13 +1193,22 @@
             ]
         },
         {
-            "name": "Player_All",
+            "name": "Always",
             "id": "a676d560-4a44-4d09-93c8-edbfacebb559",
             "actions": [
                 {
                     "name": "Toggle Inventory",
                     "type": "Button",
                     "id": "20978ece-49c6-4908-89cd-f79a64bbc76c",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Toggle Pause Menu",
+                    "type": "Button",
+                    "id": "862dcad3-2232-42c4-864f-42c36fe9e6a8",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -1215,6 +1224,17 @@
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "Toggle Inventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "617410bc-835e-4b0a-b90a-d0938a29eede",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Toggle Pause Menu",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

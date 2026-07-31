@@ -75,12 +75,6 @@ namespace Survivor.Enemy
             {
                 if (m_CurrentState != null)
                 {
-                    //
-                    // NOTE:
-                    // We don't propagate it to any state, because none of them have
-                    // any special implementation.
-                    //
-
                     ChangeState(Dead);
                 }
             }
@@ -101,7 +95,7 @@ namespace Survivor.Enemy
             {
                 if(!m_BulletPool.TryDequeue(out result))
                 {
-                    var bulletObject = Instantiate(m_BirbBulletPrefab, transform);
+                    var bulletObject = Instantiate(m_BirbBulletPrefab);
                     if(bulletObject != null)
                     {
                         bulletObject.SetActive(true);

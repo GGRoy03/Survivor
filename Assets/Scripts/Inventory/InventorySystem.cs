@@ -6,23 +6,36 @@ using UnityEngine;
 
 namespace Survivor.Inventory
 {
-    public class InventorySystem : MonoBehaviour
+    public class InventorySystem : MonoBehaviour, ISaveable
     {
         //
         // Unity Hooks
         //
 
         [Header("Dependencies")]
-        [SerializeField] private PlayerInputProvider m_InputProvider;
+        [SerializeField] private InputProvider m_InputProvider;
+
+        private void Awake()
+        {
+            //
+            // Setup the inventory load state
+            //
+
+            if(SaveSystem.TryFindSaveData(SaveKey, out InventorySavedData data))
+            {
+                m_ItemSlots = new List<ItemSlot>(data.Items);
+            }
+            SaveSystem.RegisterSaveable(this);
+        }
 
         private void Update()
         {
-            if(GameController.Current == GameController.GameMode.Inventory)
+            if(GameController.IsGameMode(GameController.GameMode.Inventory))
             {
                 bool isClosingInventory = m_InputProvider.Always.IsInventoryToggled;
                 if(isClosingInventory)
                 {
-                    GameController.SetGameMode(GameController.GameMode.Gameplay);
+                    GameController.PopGameMode();
                 }
             }
         }
@@ -68,11 +81,11 @@ namespace Survivor.Inventory
                 }
                 else
                 {
-                    m_ItemSlots[itemSlotIdx]= new ItemSlot()
+                    m_ItemSlots.Add(new ItemSlot()
                     {
                         Amount = 1,
                         Data   = itemData,
-                    };
+                    });
                 }
 
                 ++InventoryVersion;
@@ -104,8 +117,31 @@ namespace Survivor.Inventory
                 ++InventoryVersion;
             }
         }
+
+        //
+        // Saving Interface
+        //
+
+        [System.Serializable]
+        private struct InventorySavedData
+        {
+            public List<ItemSlot> Items;
+        }
+
+        public int SaveKey => SaveSystem.StringKeyToIntKey("Inventory");
+
+        public string SaveState()
+        {
+            string result = SaveSystem.AsSaveData(new InventorySavedData()
+            {
+                Items = m_ItemSlots,
+            });
+
+            return result;
+        }
     }
 
+    [System.Serializable]
     public struct ItemSlot
     {
         public ItemData Data;
